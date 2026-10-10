@@ -1,11 +1,18 @@
 import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
+import { applyPendingRestoreIfAny } from './pending-restore';
 
-const DATA_DIR = path.resolve(process.cwd(), 'data');
+export const DATA_DIR = path.resolve(process.cwd(), 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-const DB_PATH = path.join(DATA_DIR, 'scada.db');
+export const DB_PATH = path.join(DATA_DIR, 'scada.db');
+
+// If a backup restore was staged by src/lib/server/backup.ts in a previous
+// process lifetime, swap the staged db file into place now, before we open
+// our single long-lived connection below. See backup.ts for the full design
+// rationale (no hot-swapping of an open connection).
+applyPendingRestoreIfAny(DATA_DIR, DB_PATH);
 
 export const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');

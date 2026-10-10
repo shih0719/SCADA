@@ -120,5 +120,16 @@ export const api = {
 
 	// ---- Observability (B-8 / C-12) ----
 	healthz: () => fetch('/api/healthz').then((r) => handle<HealthzResponse>(r)),
-	metrics: () => fetch('/api/metrics').then((r) => handle<DeviceMetricsEntry[]>(r))
+	metrics: () => fetch('/api/metrics').then((r) => handle<DeviceMetricsEntry[]>(r)),
+
+	// ---- Backup / Restore ----
+	// Download URL, same pattern as exportCircuitsCsvUrl (GET + Content-Disposition: attachment).
+	backupExportUrl: () => '/api/backup/export',
+	restoreBackup: (file: File) => {
+		const form = new FormData();
+		form.append('file', file);
+		return fetch('/api/backup/restore', { method: 'POST', body: form }).then((r) =>
+			handle<{ ok: true; action_required: string }>(r)
+		);
+	}
 };

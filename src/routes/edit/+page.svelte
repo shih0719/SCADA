@@ -6,6 +6,7 @@
 	import DevicePanel from '#lib/components/DevicePanel.svelte';
 	import CircuitPanel from '#lib/components/CircuitPanel.svelte';
 	import ImportCsvPanel from '#lib/components/ImportCsvPanel.svelte';
+	import BackupPanel from '#lib/components/BackupPanel.svelte';
 	import FloorplanCanvas from '#lib/components/FloorplanCanvas.svelte';
 
 	const STATUS_POLL_MS = 1500;
@@ -181,6 +182,9 @@
 		{/if}
 		<div class="card">
 			<ImportCsvPanel onImported={onCsvImported} />
+		</div>
+		<div class="card">
+			<BackupPanel />
 		</div>
 	</aside>
 

@@ -240,6 +240,46 @@ space_name,device_name,device_ip,device_port,device_slave_id,coil_address,name
 
 ---
 
+## 備份／還原
+
+個人單機工具的全站備份機制：一鍵把資料庫＋底圖圖片打包成單一 zip 檔下載，之後可以上傳同一個 zip 還原。
+
+### `GET /api/backup/export`
+匯出前會先對 SQLite 執行 `wal_checkpoint(TRUNCATE)`，確保 WAL 內容 flush 回主 db 檔案，備份檔案內容完整（不需另外處理 `-wal`/`-shm`）。
+
+**回應** `200`，`Content-Type: application/zip`，`Content-Disposition: attachment; filename="scada-backup-<時間戳>.zip"`
+
+zip 內容：
+```
+manifest.json   # { "app": "scada-lighting-control", "version": 1, "created_at": "<ISO時間>" }
+scada.db        # 資料庫檔案的原始 bytes
+uploads/**      # UPLOADS_DIR 底下所有檔案，保留相對路徑
+```
+
+### `POST /api/backup/restore`
+還原備份。
+
+**請求**：`multipart/form-data`，欄位名稱 `file`（`GET /api/backup/export` 產生的 zip）
+
+**驗證規則**：
+- zip 裡必須有 `manifest.json` 且 `app === "scada-lighting-control"`，否則 `400 { "error": "不是有效的備份檔" }`
+- zip 裡必須有 `scada.db` 這個 entry，否則 `400 { "error": "不是有效的備份檔（缺少 scada.db）" }`
+
+**還原行為（重要：採用簡化設計，避免熱切換已開啟的資料庫連線）**：
+1. `uploads/` 會立即套用——清空現有 UPLOADS_DIR 內容，把 zip 裡 `uploads/` 底下的檔案全部還原進去。這一步呼叫成功後就已經生效，不需要重啟。
+2. 還原的 `scada.db` 會先寫到 `<DB_PATH>.restoring`（不會直接覆蓋正在使用中的資料庫檔案），並寫一個標記檔案 `<DATA_DIR>/.pending-restore` 記錄待套用的路徑。
+3. **資料庫的還原要等下一次伺服器啟動才會真正套用**：下次啟動時（`src/lib/server/db.ts` 建立 `better-sqlite3` 連線之前），如果偵測到標記檔案存在，會把現有的 `scada.db` 改名成 `scada.db.bak`，把 `.restoring` 檔案 rename 成正式的 `scada.db`，刪除標記檔案，然後才正常建立 DB 連線。
+
+**回應** `200`
+```json
+{ "ok": true, "action_required": "請重新啟動伺服器（Ctrl+C 後重新執行 npm run dev）以套用還原的資料" }
+```
+收到這個回應後，**務必重新啟動伺服器**（`Ctrl+C` 後重新 `npm run dev`），否則資料庫內容還是還原前的舊狀態（uploads 已經是新的，但 DB 要等重啟）。
+
+`400`：格式不符的檔案（見上方驗證規則）；此時現有資料庫**不會**被動到。
+
+---
+
 ## 靜態檔案
 
 ### `GET /api/uploads/:filename`
