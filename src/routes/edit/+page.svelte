@@ -1,11 +1,19 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import type { Space, Device, Circuit, CircuitRuntimeState, SceneSummary } from '#lib/types.ts';
+	import type {
+		Space,
+		Device,
+		Circuit,
+		CircuitRuntimeState,
+		SceneSummary,
+		ScheduleWithSceneName
+	} from '#lib/types.ts';
 	import { api } from '#lib/client/api.ts';
 	import SpacePanel from '#lib/components/SpacePanel.svelte';
 	import DevicePanel from '#lib/components/DevicePanel.svelte';
 	import CircuitPanel from '#lib/components/CircuitPanel.svelte';
 	import ScenePanel from '#lib/components/ScenePanel.svelte';
+	import SchedulePanel from '#lib/components/SchedulePanel.svelte';
 	import ImportCsvPanel from '#lib/components/ImportCsvPanel.svelte';
 	import BackupPanel from '#lib/components/BackupPanel.svelte';
 	import FloorplanCanvas from '#lib/components/FloorplanCanvas.svelte';
@@ -17,6 +25,7 @@
 	let circuits = $state<Circuit[]>([]);
 	let allCircuits = $state<Circuit[]>([]);
 	let scenes = $state<SceneSummary[]>([]);
+	let schedules = $state<ScheduleWithSceneName[]>([]);
 	let states = $state<Map<number, CircuitRuntimeState>>(new Map());
 	let selectedSpaceId = $state<number | null>(null);
 	let placingCircuitId = $state<number | null>(null);
@@ -46,6 +55,10 @@
 
 	async function reloadScenes() {
 		scenes = await api.listScenes();
+	}
+
+	async function reloadSchedules() {
+		schedules = await api.listSchedules();
 	}
 
 	async function reloadCircuits() {
@@ -103,6 +116,13 @@
 
 	async function onScenesChanged() {
 		await reloadScenes();
+		// Deleting a scene cascades to any schedules that applied it (FK ON
+		// DELETE CASCADE), so refresh the schedule list too.
+		await reloadSchedules();
+	}
+
+	async function onSchedulesChanged() {
+		await reloadSchedules();
 	}
 
 	async function handlePositionChange(circuitId: number, pos_x: number, pos_y: number) {
@@ -151,6 +171,7 @@
 		await reloadCircuits();
 		await reloadAllCircuits();
 		await reloadScenes();
+		await reloadSchedules();
 		restartStatusPolling();
 	});
 
@@ -205,6 +226,9 @@
 		</div>
 		<div class="card">
 			<ScenePanel {scenes} {spaces} {allCircuits} onChanged={onScenesChanged} />
+		</div>
+		<div class="card">
+			<SchedulePanel {schedules} {scenes} onChanged={onSchedulesChanged} />
 		</div>
 		<div class="card">
 			<BackupPanel />

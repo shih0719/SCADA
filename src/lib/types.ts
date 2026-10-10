@@ -117,6 +117,21 @@ export interface SpaceBulkSetResult extends ApplyResult {
 	space_id: number;
 }
 
+// ---- Schedules ----
+
+export interface ScheduleWithSceneName {
+	id: number;
+	name: string;
+	scene_id: number;
+	scene_name: string | null;
+	time_of_day: string;
+	days_of_week: number[];
+	is_enabled: number;
+	last_triggered_at: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
 // ---- CSV bulk import (Circuit + auto-create Space/Device) ----
 
 export interface ImportRowResult {

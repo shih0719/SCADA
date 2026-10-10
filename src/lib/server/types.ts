@@ -63,6 +63,23 @@ export interface SceneWithActions extends Scene {
 	actions: SceneActionDetail[];
 }
 
+export interface Schedule {
+	id: number;
+	name: string;
+	scene_id: number;
+	time_of_day: string; // "HH:MM"
+	days_of_week: string; // comma-separated "0".."6" stored in DB
+	is_enabled: number; // sqlite stores boolean as 0/1
+	last_triggered_at: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface ScheduleWithSceneName extends Omit<Schedule, 'days_of_week'> {
+	scene_name: string | null;
+	days_of_week: number[];
+}
+
 export type CircuitStatus = 'ok' | 'stale' | 'error';
 
 export interface CircuitRuntimeState {

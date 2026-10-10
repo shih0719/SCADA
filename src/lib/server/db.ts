@@ -73,4 +73,18 @@ CREATE TABLE IF NOT EXISTS scene_actions (
 
 CREATE INDEX IF NOT EXISTS idx_scene_actions_scene ON scene_actions(scene_id);
 CREATE INDEX IF NOT EXISTS idx_scene_actions_circuit ON scene_actions(circuit_id);
+
+CREATE TABLE IF NOT EXISTS schedules (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  scene_id INTEGER NOT NULL REFERENCES scenes(id) ON DELETE CASCADE,
+  time_of_day TEXT NOT NULL,
+  days_of_week TEXT NOT NULL,
+  is_enabled INTEGER NOT NULL DEFAULT 1,
+  last_triggered_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_schedules_scene ON schedules(scene_id);
 `);

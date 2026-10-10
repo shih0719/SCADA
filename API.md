@@ -401,6 +401,77 @@ uploads/**      # UPLOADS_DIR 底下所有檔案，保留相對路徑
 
 ---
 
+## 定時排程（Schedule）
+
+排程只能做一件事：**在指定時間、指定星期幾重複，自動套用一個已定義的場景**。不支援其他動作類型——如果想排程「某個 Space 全開」，先去建一個「只包含那個 Space 所有迴路、全部設成開」的場景，再排程套用那個場景。排程管理在編輯頁（`/edit`），操作頁不會出現排程功能（排程是背景自動執行的設定，不是手動操作）。
+
+**重要備忘**：
+- `time_of_day` 是**伺服器本機時間**，不是 UTC，也不是瀏覽器所在時區
+- 背景排程器每 30 秒檢查一次（`tick()`），同一分鐘內最多觸發一次（靠 `last_triggered_at` 判斷，避免兩次 tick 落在同一分鐘內重複套用）
+- **不處理「process 關機期間錯過的排程」**——例如預定 23:00 關燈，但伺服器那時剛好重啟，錯過了就不會補觸發，這是刻意簡化，不是 bug
+- 刪除場景會透過 FK `ON DELETE CASCADE` 自動刪除引用它的排程（場景沒了，排程也該消失）
+
+### `GET /api/schedules`
+列出所有排程，附帶對應的場景名稱。
+
+**回應** `200`
+```json
+[
+  {
+    "id": 1,
+    "name": "平日下班關燈",
+    "scene_id": 1,
+    "scene_name": "下班關燈",
+    "time_of_day": "18:30",
+    "days_of_week": [1, 2, 3, 4, 5],
+    "is_enabled": 1,
+    "last_triggered_at": "2026-10-09T10:30:02.123Z",
+    "created_at": "...",
+    "updated_at": "..."
+  }
+]
+```
+
+### `POST /api/schedules`
+建立一個新排程。
+
+**請求 body**
+```json
+{
+  "name": "平日下班關燈",
+  "scene_id": 1,
+  "time_of_day": "18:30",
+  "days_of_week": [1, 2, 3, 4, 5],
+  "is_enabled": true
+}
+```
+
+**驗證規則**：
+- `name` 必填、非空字串
+- `scene_id` 必須是存在的場景，否則回 `400`
+- `time_of_day` 必須符合 `^([01]\d|2[0-3]):([0-5]\d)$`（24 小時制 `HH:MM`），否則回 `400`
+- `days_of_week` 必須是非空的整數陣列，每個元素是 0-6（0=Sunday..6=Saturday），否則回 `400`
+- `is_enabled` 可選，預設 `true`
+
+**回應** `201` 排程物件（含 `scene_name`）／`400` 驗證失敗
+
+### `GET /api/schedules/:id`
+取得單一排程。回應格式同列表項目。
+
+`404` 若排程不存在。
+
+### `PATCH /api/schedules/:id`
+局部更新排程。`name`、`scene_id`、`time_of_day`、`days_of_week`、`is_enabled` 都可以單獨給，驗證規則同 `POST /api/schedules`（只套用在有提供的欄位上）。
+
+**回應** `200` 更新後的排程／`404` 排程不存在／`400` 驗證失敗
+
+### `DELETE /api/schedules/:id`
+刪除排程。
+
+**回應** `200 { "ok": true }` ／ `404` 排程不存在
+
+---
+
 ## 靜態檔案
 
 ### `GET /api/uploads/:filename`

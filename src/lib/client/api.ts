@@ -9,7 +9,8 @@ import type {
 	SceneSummary,
 	SceneWithActions,
 	SceneApplyResult,
-	SpaceBulkSetResult
+	SpaceBulkSetResult,
+	ScheduleWithSceneName
 } from '#lib/types.ts';
 
 async function handle<T>(res: Response): Promise<T> {
@@ -165,5 +166,29 @@ export const api = {
 		return fetch('/api/backup/restore', { method: 'POST', body: form }).then((r) =>
 			handle<{ ok: true; action_required: string }>(r)
 		);
-	}
+	},
+
+	// ---- Schedules ----
+	listSchedules: () => fetch('/api/schedules').then((r) => handle<ScheduleWithSceneName[]>(r)),
+	getSchedule: (id: number) => fetch(`/api/schedules/${id}`).then((r) => handle<ScheduleWithSceneName>(r)),
+	createSchedule: (input: {
+		name: string;
+		scene_id: number;
+		time_of_day: string;
+		days_of_week: number[];
+		is_enabled?: boolean;
+	}) =>
+		fetch('/api/schedules', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify(input)
+		}).then((r) => handle<ScheduleWithSceneName>(r)),
+	updateSchedule: (id: number, patch: Record<string, unknown>) =>
+		fetch(`/api/schedules/${id}`, {
+			method: 'PATCH',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify(patch)
+		}).then((r) => handle<ScheduleWithSceneName>(r)),
+	deleteSchedule: (id: number) =>
+		fetch(`/api/schedules/${id}`, { method: 'DELETE' }).then((r) => handle<{ ok: boolean }>(r))
 };
