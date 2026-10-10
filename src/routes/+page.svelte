@@ -225,6 +225,7 @@
 		<h1>燈控 SCADA</h1>
 		<p class="nav">
 			<a href="/edit">編輯模式 →</a>
+			<a href="/automation">場景與排程 →</a>
 			<a href="/status">系統狀態 →</a>
 		</p>
 		<p class="summary">
