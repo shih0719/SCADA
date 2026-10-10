@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import type { Space, Circuit, CircuitRuntimeState } from '#lib/types.ts';
+	import type { Space, Circuit, CircuitRuntimeState, SceneSummary } from '#lib/types.ts';
 	import { api } from '#lib/client/api.ts';
 	import SpaceSelector from '#lib/components/SpaceSelector.svelte';
 	import FloorplanCanvas from '#lib/components/FloorplanCanvas.svelte';
@@ -16,6 +16,12 @@
 	let loadError = $state('');
 	let restartNotice = $state('');
 	let flashErrorIds = $state<Set<number>>(new Set());
+
+	let scenes = $state<SceneSummary[]>([]);
+	let bulkSetBusy = $state(false);
+	let bulkSetMessage = $state('');
+	let sceneBusyId = $state<number | null>(null);
+	let sceneMessage = $state('');
 
 	const selectedSpace = $derived(spaces.find((s) => s.id === selectedSpaceId) ?? null);
 
@@ -43,6 +49,26 @@
 			return;
 		}
 		circuits = await api.listCircuits(selectedSpaceId);
+	}
+
+	// Scenes can span multiple Spaces, so error reporting after "apply" needs
+	// a name for any circuit_id, not just circuits in the currently selected
+	// Space. Loaded once (and refreshed on scene-list reload) — this is
+	// static circuit metadata, not runtime state, so it doesn't need polling.
+	let allCircuitLabels = $state<Map<number, string>>(new Map());
+
+	async function reloadAllCircuitLabels() {
+		const [allCircuits, allSpaces] = await Promise.all([api.listAllCircuits(), api.listSpaces()]);
+		const spaceNameById = new Map(allSpaces.map((s) => [s.id, s.name]));
+		const map = new Map<number, string>();
+		for (const c of allCircuits) {
+			map.set(c.id, `${spaceNameById.get(c.space_id) ?? ''} - ${c.name}`);
+		}
+		allCircuitLabels = map;
+	}
+
+	async function reloadScenes() {
+		scenes = await api.listScenes();
 	}
 
 	async function pollStatus() {
@@ -122,9 +148,54 @@
 	function noopPositionChange() {}
 	function noopPlaceAt() {}
 
+	function formatApplyResult(
+		results: { circuit_id: number; ok: boolean; error?: string }[],
+		successCount: number,
+		errorCount: number
+	): string {
+		if (errorCount === 0) return `全部成功（${successCount}/${results.length}）`;
+		const failedNames = results
+			.filter((r) => !r.ok)
+			.map((r) => allCircuitLabels.get(r.circuit_id) ?? `circuit ${r.circuit_id}`)
+			.join('、');
+		return `${successCount}/${results.length} 成功，失敗：${failedNames}`;
+	}
+
+	async function handleBulkSet(value: boolean) {
+		if (selectedSpaceId === null) return;
+		const spaceName = selectedSpace?.name ?? '這個空間';
+		const actionLabel = value ? '全部開' : '全部關';
+		if (!confirm(`確定要把「${spaceName}」底下所有迴路${actionLabel}嗎？`)) return;
+		bulkSetBusy = true;
+		bulkSetMessage = '';
+		try {
+			const result = await api.bulkSetSpace(selectedSpaceId, value);
+			bulkSetMessage = formatApplyResult(result.results, result.success_count, result.error_count);
+		} catch (e) {
+			bulkSetMessage = e instanceof Error ? e.message : 'bulk set failed';
+		} finally {
+			bulkSetBusy = false;
+		}
+	}
+
+	async function handleApplyScene(sceneId: number) {
+		sceneBusyId = sceneId;
+		sceneMessage = '';
+		try {
+			const result = await api.applyScene(sceneId);
+			sceneMessage = formatApplyResult(result.results, result.success_count, result.error_count);
+		} catch (e) {
+			sceneMessage = e instanceof Error ? e.message : 'apply scene failed';
+		} finally {
+			sceneBusyId = null;
+		}
+	}
+
 	onMount(async () => {
 		await reloadSpaces();
 		await reloadCircuits();
+		await reloadScenes();
+		void reloadAllCircuitLabels();
 		restartStatusPolling();
 		void checkServerRestart();
 	});
@@ -163,13 +234,47 @@
 			{/if}
 		</p>
 		<SpaceSelector spaces={spaces} selectedId={selectedSpaceId} onSelect={selectSpace} />
+
+		<section class="panel scene-panel">
+			<h2>場景</h2>
+			<ul class="scene-list">
+				{#each scenes as scene (scene.id)}
+					<li>
+						<span class="scene-name">{scene.name}</span>
+						<button
+							type="button"
+							class="apply-btn"
+							disabled={sceneBusyId === scene.id}
+							onclick={() => handleApplyScene(scene.id)}
+						>
+							{sceneBusyId === scene.id ? '套用中…' : '套用'}
+						</button>
+					</li>
+				{/each}
+			</ul>
+			{#if scenes.length === 0}
+				<p class="empty">尚無場景，請至編輯頁建立。</p>
+			{/if}
+			{#if sceneMessage}<p class="result-message">{sceneMessage}</p>{/if}
+		</section>
 	</aside>
 
 	<main class="main">
 		{#if restartNotice}<p class="restart-banner">{restartNotice}</p>{/if}
 		{#if loadError}<p class="error-banner">{loadError}</p>{/if}
 		{#if selectedSpace}
-			<h2>{selectedSpace.name}</h2>
+			<div class="space-header">
+				<h2>{selectedSpace.name}</h2>
+				<div class="bulk-actions">
+					<button type="button" disabled={bulkSetBusy} onclick={() => handleBulkSet(true)}>
+						全部開
+					</button>
+					<button type="button" disabled={bulkSetBusy} onclick={() => handleBulkSet(false)}>
+						全部關
+					</button>
+				</div>
+			</div>
+			{#if bulkSetMessage}<p class="result-message">{bulkSetMessage}</p>{/if}
 			<FloorplanCanvas
 				space={selectedSpace}
 				{circuits}
@@ -266,5 +371,90 @@
 		border: 1px solid var(--color-warning-border);
 		padding: var(--space-2) var(--space-3);
 		border-radius: var(--radius-sm);
+	}
+	.space-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+	}
+	.bulk-actions {
+		display: flex;
+		gap: var(--space-2);
+	}
+	.bulk-actions button {
+		background: var(--color-accent);
+		color: var(--color-bg);
+		border: 1px solid var(--color-accent);
+		border-radius: var(--radius-sm);
+		padding: var(--space-1) var(--space-3);
+		font-family: var(--font-ui);
+		font-size: 13px;
+		cursor: pointer;
+	}
+	.bulk-actions button:hover {
+		background: var(--color-accent-hover);
+	}
+	.bulk-actions button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+	.result-message {
+		font-size: 13px;
+		color: var(--color-text-secondary);
+		margin: var(--space-1) 0 var(--space-3);
+	}
+	.scene-panel {
+		margin-top: var(--space-4);
+	}
+	.scene-panel h2 {
+		color: var(--color-text);
+		font-size: 1rem;
+	}
+	.scene-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+	.scene-list li {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface-elevated);
+		box-shadow: var(--shadow-card);
+	}
+	.scene-name {
+		color: var(--color-text);
+		font-size: 13px;
+	}
+	.apply-btn {
+		background: var(--color-accent);
+		color: var(--color-bg);
+		border: 1px solid var(--color-accent);
+		border-radius: var(--radius-sm);
+		padding: var(--space-1) var(--space-2);
+		font-family: var(--font-ui);
+		font-size: 12px;
+		cursor: pointer;
+	}
+	.apply-btn:hover {
+		background: var(--color-accent-hover);
+	}
+	.apply-btn:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+	.empty {
+		color: var(--color-text-muted);
+		font-size: 13px;
+	}
+	.panel {
+		margin-bottom: var(--space-4);
 	}
 </style>

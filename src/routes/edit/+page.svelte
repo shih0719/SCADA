@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import type { Space, Device, Circuit, CircuitRuntimeState } from '#lib/types.ts';
+	import type { Space, Device, Circuit, CircuitRuntimeState, SceneSummary } from '#lib/types.ts';
 	import { api } from '#lib/client/api.ts';
 	import SpacePanel from '#lib/components/SpacePanel.svelte';
 	import DevicePanel from '#lib/components/DevicePanel.svelte';
 	import CircuitPanel from '#lib/components/CircuitPanel.svelte';
+	import ScenePanel from '#lib/components/ScenePanel.svelte';
 	import ImportCsvPanel from '#lib/components/ImportCsvPanel.svelte';
 	import BackupPanel from '#lib/components/BackupPanel.svelte';
 	import FloorplanCanvas from '#lib/components/FloorplanCanvas.svelte';
@@ -14,6 +15,8 @@
 	let spaces = $state<Space[]>([]);
 	let devices = $state<Device[]>([]);
 	let circuits = $state<Circuit[]>([]);
+	let allCircuits = $state<Circuit[]>([]);
+	let scenes = $state<SceneSummary[]>([]);
 	let states = $state<Map<number, CircuitRuntimeState>>(new Map());
 	let selectedSpaceId = $state<number | null>(null);
 	let placingCircuitId = $state<number | null>(null);
@@ -35,6 +38,14 @@
 
 	async function reloadDevices() {
 		devices = await api.listDevices();
+	}
+
+	async function reloadAllCircuits() {
+		allCircuits = await api.listAllCircuits();
+	}
+
+	async function reloadScenes() {
+		scenes = await api.listScenes();
 	}
 
 	async function reloadCircuits() {
@@ -73,10 +84,12 @@
 	async function onSpacesChanged() {
 		await reloadSpaces();
 		await reloadCircuits();
+		await reloadAllCircuits();
 	}
 
 	async function onCircuitsChanged() {
 		await reloadCircuits();
+		await reloadAllCircuits();
 	}
 
 	// CSV import may create new Spaces/Devices too (not just Circuits), so
@@ -85,6 +98,11 @@
 		await reloadSpaces();
 		await reloadDevices();
 		await reloadCircuits();
+		await reloadAllCircuits();
+	}
+
+	async function onScenesChanged() {
+		await reloadScenes();
 	}
 
 	async function handlePositionChange(circuitId: number, pos_x: number, pos_y: number) {
@@ -131,6 +149,8 @@
 		await reloadSpaces();
 		await reloadDevices();
 		await reloadCircuits();
+		await reloadAllCircuits();
+		await reloadScenes();
 		restartStatusPolling();
 	});
 
@@ -182,6 +202,9 @@
 		{/if}
 		<div class="card">
 			<ImportCsvPanel onImported={onCsvImported} />
+		</div>
+		<div class="card">
+			<ScenePanel {scenes} {spaces} {allCircuits} onChanged={onScenesChanged} />
 		</div>
 		<div class="card">
 			<BackupPanel />

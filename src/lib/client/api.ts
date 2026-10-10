@@ -5,7 +5,11 @@ import type {
 	CircuitRuntimeState,
 	HealthzResponse,
 	DeviceMetricsEntry,
-	ImportResult
+	ImportResult,
+	SceneSummary,
+	SceneWithActions,
+	SceneApplyResult,
+	SpaceBulkSetResult
 } from '#lib/types.ts';
 
 async function handle<T>(res: Response): Promise<T> {
@@ -49,6 +53,12 @@ export const api = {
 		);
 	},
 	spaceStatus: (id: number) => fetch(`/api/spaces/${id}/status`).then((r) => handle<CircuitRuntimeState[]>(r)),
+	bulkSetSpace: (id: number, value: boolean) =>
+		fetch(`/api/spaces/${id}/bulk-set`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ value })
+		}).then((r) => handle<SpaceBulkSetResult>(r)),
 
 	// ---- Devices ----
 	listDevices: () => fetch('/api/devices').then((r) => handle<Device[]>(r)),
@@ -80,6 +90,7 @@ export const api = {
 	// ---- Circuits ----
 	listCircuits: (spaceId: number) =>
 		fetch(`/api/circuits?space_id=${spaceId}`).then((r) => handle<Circuit[]>(r)),
+	listAllCircuits: () => fetch('/api/circuits?all=true').then((r) => handle<Circuit[]>(r)),
 	createCircuit: (input: { space_id: number; device_id: number; coil_address: number; name: string }) =>
 		fetch('/api/circuits', {
 			method: 'POST',
@@ -121,6 +132,29 @@ export const api = {
 	// ---- Observability (B-8 / C-12) ----
 	healthz: () => fetch('/api/healthz').then((r) => handle<HealthzResponse>(r)),
 	metrics: () => fetch('/api/metrics').then((r) => handle<DeviceMetricsEntry[]>(r)),
+
+	// ---- Scenes / group control ----
+	listScenes: () => fetch('/api/scenes').then((r) => handle<SceneSummary[]>(r)),
+	getScene: (id: number) => fetch(`/api/scenes/${id}`).then((r) => handle<SceneWithActions>(r)),
+	createScene: (name: string, actions: { circuit_id: number; value: boolean }[]) =>
+		fetch('/api/scenes', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ name, actions })
+		}).then((r) => handle<SceneWithActions>(r)),
+	updateScene: (
+		id: number,
+		patch: { name?: string; actions?: { circuit_id: number; value: boolean }[] }
+	) =>
+		fetch(`/api/scenes/${id}`, {
+			method: 'PATCH',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify(patch)
+		}).then((r) => handle<SceneWithActions>(r)),
+	deleteScene: (id: number) =>
+		fetch(`/api/scenes/${id}`, { method: 'DELETE' }).then((r) => handle<{ ok: boolean }>(r)),
+	applyScene: (id: number) =>
+		fetch(`/api/scenes/${id}/apply`, { method: 'POST' }).then((r) => handle<SceneApplyResult>(r)),
 
 	// ---- Backup / Restore ----
 	// Download URL, same pattern as exportCircuitsCsvUrl (GET + Content-Disposition: attachment).

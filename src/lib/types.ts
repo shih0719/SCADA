@@ -70,6 +70,53 @@ export interface DeviceMetricsEntry {
 	recent: { ok: boolean; latencyMs: number; at: string }[];
 }
 
+// ---- Scenes / group control ----
+
+export interface SceneSummary {
+	id: number;
+	name: string;
+	created_at: string;
+	updated_at: string;
+	action_count: number;
+}
+
+export interface SceneActionDetail {
+	circuit_id: number;
+	value: boolean;
+	circuit_name: string;
+	space_id: number;
+	space_name: string;
+}
+
+export interface SceneWithActions {
+	id: number;
+	name: string;
+	created_at: string;
+	updated_at: string;
+	actions: SceneActionDetail[];
+}
+
+export interface ApplyResultEntry {
+	circuit_id: number;
+	ok: boolean;
+	value?: boolean;
+	error?: string;
+}
+
+export interface ApplyResult {
+	results: ApplyResultEntry[];
+	success_count: number;
+	error_count: number;
+}
+
+export interface SceneApplyResult extends ApplyResult {
+	scene_id: number;
+}
+
+export interface SpaceBulkSetResult extends ApplyResult {
+	space_id: number;
+}
+
 // ---- CSV bulk import (Circuit + auto-create Space/Device) ----
 
 export interface ImportRowResult {

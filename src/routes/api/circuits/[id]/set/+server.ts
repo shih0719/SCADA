@@ -1,8 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getCircuit } from '#lib/server/repo.ts';
-import { setCircuitOptimistic } from '#lib/server/runtime-state.ts';
-import { writeCoilForCircuit } from '#lib/server/modbus-poller.ts';
+import { setCircuitValue } from '#lib/server/circuit-control.ts';
 import { parseIdParam, ValidationError } from '#lib/server/validation.ts';
 
 // Unlike /toggle (which inverts the currently-known value and therefore
@@ -22,21 +21,14 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		}
 		const targetValue: boolean = body.value;
 
-		// Optimistic update: the frontend/caller should be able to reflect this
-		// immediately. Source of truth remains the next poll cycle, which will
-		// overwrite this if the real device disagrees.
-		setCircuitOptimistic(id, targetValue);
-
-		try {
-			await writeCoilForCircuit(id, targetValue);
-			return json({ ok: true, circuit_id: id, value: targetValue });
-		} catch (err) {
-			// We don't know the prior value here (that's the point of this
-			// endpoint), so there is nothing meaningful to roll the optimistic
-			// state back to; the next poll cycle will correct it regardless.
-			const message = err instanceof Error ? err.message : 'write failed';
-			return json({ error: `set failed: ${message}` }, { status: 502 });
+		// setCircuitValue does the optimistic update + Modbus FC5 write; the
+		// core logic here is shared with bulk-set and scene-apply, but the
+		// request/response contract of this endpoint stays exactly as before.
+		const result = await setCircuitValue(id, targetValue);
+		if (!result.ok) {
+			return json({ error: result.error }, { status: 502 });
 		}
+		return json({ ok: true, circuit_id: result.circuit_id, value: result.value });
 	} catch (e) {
 		if (e instanceof ValidationError) return json({ error: e.message }, { status: 400 });
 		throw e;

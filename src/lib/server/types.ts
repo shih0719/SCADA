@@ -33,6 +33,36 @@ export interface Circuit {
 	updated_at: string;
 }
 
+export interface Scene {
+	id: number;
+	name: string;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface SceneAction {
+	id: number;
+	scene_id: number;
+	circuit_id: number;
+	value: number; // sqlite stores boolean as 0/1
+}
+
+export interface SceneSummary extends Scene {
+	action_count: number;
+}
+
+export interface SceneActionDetail {
+	circuit_id: number;
+	value: boolean;
+	circuit_name: string;
+	space_id: number;
+	space_name: string;
+}
+
+export interface SceneWithActions extends Scene {
+	actions: SceneActionDetail[];
+}
+
 export type CircuitStatus = 'ok' | 'stale' | 'error';
 
 export interface CircuitRuntimeState {

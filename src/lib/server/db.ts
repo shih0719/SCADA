@@ -56,4 +56,21 @@ CREATE TABLE IF NOT EXISTS circuits (
 
 CREATE INDEX IF NOT EXISTS idx_circuits_space ON circuits(space_id);
 CREATE INDEX IF NOT EXISTS idx_circuits_device ON circuits(device_id);
+
+CREATE TABLE IF NOT EXISTS scenes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+
+CREATE TABLE IF NOT EXISTS scene_actions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  scene_id INTEGER NOT NULL REFERENCES scenes(id) ON DELETE CASCADE,
+  circuit_id INTEGER NOT NULL REFERENCES circuits(id) ON DELETE CASCADE,
+  value INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_scene_actions_scene ON scene_actions(scene_id);
+CREATE INDEX IF NOT EXISTS idx_scene_actions_circuit ON scene_actions(circuit_id);
 `);

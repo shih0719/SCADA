@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { listCircuitsBySpace, createCircuit, getSpace, getDevice } from '#lib/server/repo.ts';
+import { listCircuitsBySpace, listAllCircuits, createCircuit, getSpace, getDevice } from '#lib/server/repo.ts';
 import { reloadPollers } from '#lib/server/modbus-poller.ts';
 import {
 	requireString,
@@ -10,6 +10,13 @@ import {
 } from '#lib/server/validation.ts';
 
 export const GET: RequestHandler = async ({ url }) => {
+	// Scenes span multiple Spaces, so the scene editor UI needs the full list
+	// of Circuits across every Space. ?all=true opts into that; the default
+	// (space_id required) behavior for the per-Space circuit list is unchanged.
+	if (url.searchParams.get('all') === 'true') {
+		return json(listAllCircuits());
+	}
+
 	const spaceIdRaw = url.searchParams.get('space_id');
 	if (!spaceIdRaw) {
 		return json({ error: 'space_id query parameter is required' }, { status: 400 });

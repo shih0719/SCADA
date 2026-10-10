@@ -122,6 +122,9 @@ Base URL：`http://localhost:<port>`（開發模式由 `npm run dev` 印出實�
 ### `GET /api/circuits?space_id=<id>`
 列出某個 Space 下所有 Circuit 的**靜態資料**（不含即時開關狀態，狀態要另外打 `/api/spaces/:id/status`）。`space_id` query 參數必填。
 
+### `GET /api/circuits?all=true`
+列出**跨所有 Space** 的全部 Circuit（靜態資料，格式跟上面相同）。場景編輯介面（`/edit` 的場景面板）用這個端點取得完整清單，讓使用者能選擇任何 Space 底下的任何 Circuit 加入場景。
+
 ### `POST /api/circuits`
 建立一個新 Circuit。
 
@@ -163,6 +166,124 @@ Base URL：`http://localhost:<port>`（開發模式由 `npm run dev` 印出實�
 **請求 body**：`{ "value": true }`（`value` 必填，必須是 boolean）
 
 **回應**：成功 `200 { "ok": true, "circuit_id": 2, "value": true }`；`value` 缺失或非 boolean → `400`；查無 Circuit → `404`；Modbus 寫入失敗 → `502 { "error": "set failed: ..." }`。重複呼叫同一個值是安全的（idempotent）。
+
+> 這個端點的核心邏輯（取出 Circuit、樂觀更新、送出 Modbus FC5 寫入）被抽成 `src/lib/server/circuit-control.ts` 的 `setCircuitValue()`，下面的「場景套用」與「Space 全開/全關」都重用同一個函式，行為保證一致（包含失敗訊息格式 `set failed: ...`）。
+
+---
+
+## 場景／群組控制（Scene / Group Control）
+
+場景（Scene）是一組「Circuit → 目標值」的命名組合，建立/編輯/刪除在編輯頁（`/edit`）進行（屬於設定/配置行為），套用（觸發）在操作頁（`/`）進行（屬於日常操作行為）。場景**可以跨 Space**——一個場景裡的 action 可以同時指向不同 Space 底下的 Circuit。
+
+另外提供 Space 層級的「全開/全關」快捷操作（不需要事先定義場景，直接對目前選中的 Space 底下所有 Circuit 生效）。
+
+兩者套用時都遵循跟 CSV 匯入一致的設計哲學：**部分失敗不影響其他動作**——例如場景裡有兩個 Circuit，其中一個對應的 Device 離線，該 Circuit 回報失敗，另一個仍會正常套用成功。
+
+### `GET /api/scenes`
+列出所有場景的基本資料（不含 action 明細，只有數量）。
+
+**回應** `200`
+```json
+[
+  { "id": 1, "name": "下班關燈", "created_at": "...", "updated_at": "...", "action_count": 3 }
+]
+```
+
+### `POST /api/scenes`
+建立一個新場景。
+
+**請求 body**
+```json
+{
+  "name": "下班關燈",
+  "actions": [
+    { "circuit_id": 2, "value": false },
+    { "circuit_id": 5, "value": false }
+  ]
+}
+```
+
+**驗證規則**：
+- `name` 必填、非空字串
+- `actions` 必須是陣列（可為空陣列）；每個項目的 `circuit_id` 必須是存在的 Circuit，否則整個請求回 `400`（明確指出哪個 `circuit_id` 有問題），**不會**建立半成品場景
+- 每個項目的 `value` 必須是 boolean
+- 若同一個 `circuit_id` 在 `actions` 裡出現超過一次，不會報錯——套用時以陣列順序**最後一個**為準
+
+**回應** `201` 場景物件（不含 actions 明細，要看明細請用 `GET /api/scenes/:id`）／`400` 驗證失敗
+
+### `GET /api/scenes/:id`
+取得單一場景的完整明細，包含每個 action 的 Circuit 名稱與所屬 Space 名稱（方便前端顯示，不用額外查詢）。
+
+**回應** `200`
+```json
+{
+  "id": 1,
+  "name": "下班關燈",
+  "created_at": "...",
+  "updated_at": "...",
+  "actions": [
+    { "circuit_id": 2, "value": false, "circuit_name": "窗邊燈", "space_id": 1, "space_name": "3F辦公室" },
+    { "circuit_id": 5, "value": false, "circuit_name": "走廊燈", "space_id": 2, "space_name": "2F倉庫" }
+  ]
+}
+```
+若場景裡某個 action 所指向的 Circuit 已被刪除（FK `ON DELETE CASCADE`），該 action 會自動從列表中消失——`GET`/`POST apply` 都不會因此出錯，場景只是少了那個動作。
+
+`404` 若場景不存在。
+
+### `PATCH /api/scenes/:id`
+局部更新場景。`name`、`actions` 都可以單獨給，也可以一起給。
+
+- 只給 `name` → 只改名字，actions 不變
+- 只給 `actions` → **整批替換**（先刪除該場景底下所有舊 actions，再寫入新的），name 不變
+- `actions` 的驗證規則跟 `POST /api/scenes` 相同
+
+**回應** `200` 更新後的場景完整明細（跟 `GET /api/scenes/:id` 格式相同）／`404` 場景不存在／`400` 驗證失敗
+
+### `DELETE /api/scenes/:id`
+刪除場景。底下的 actions 靠 FK `ON DELETE CASCADE` 自動清掉，**不會**動到任何 Circuit 本身的資料。
+
+**回應** `200 { "ok": true }` ／ `404` 場景不存在
+
+### `POST /api/scenes/:id/apply`
+套用場景：對場景底下每個 action **平行**呼叫跟 `/api/circuits/:id/set` 相同的核心邏輯（`setCircuitValue()`），任何一個 Circuit 失敗都不影響其他 Circuit。
+
+**回應** `200`
+```json
+{
+  "scene_id": 1,
+  "results": [
+    { "ok": true, "circuit_id": 2, "value": false },
+    { "ok": false, "circuit_id": 5, "error": "set failed: device unreachable" }
+  ],
+  "success_count": 1,
+  "error_count": 1
+}
+```
+`404` 若場景不存在。
+
+---
+
+## Space 全開／全關（快捷群組操作）
+
+### `POST /api/spaces/:id/bulk-set`
+把指定 Space 底下**所有** Circuit 平行設成同一個目標值（不需要事先建立場景）。跟場景套用一樣，部分 Circuit 失敗不影響其他 Circuit。
+
+**請求 body**：`{ "value": true }`（`value` 必填，必須是 boolean）
+
+**回應** `200`
+```json
+{
+  "space_id": 1,
+  "results": [
+    { "ok": true, "circuit_id": 2, "value": true },
+    { "ok": true, "circuit_id": 3, "value": true }
+  ],
+  "success_count": 2,
+  "error_count": 0
+}
+```
+`404` 若 Space 不存在／`400` `value` 缺失或非 boolean
 
 ---
 
