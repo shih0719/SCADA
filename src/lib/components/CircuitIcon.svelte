@@ -138,65 +138,69 @@
 	}
 	@keyframes flash-error-anim {
 		0%, 100% { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); border-color: inherit; }
-		50% { box-shadow: 0 0 0 4px rgba(224, 49, 49, 0.9); border-color: #e03131; }
+		50% { box-shadow: 0 0 0 4px var(--color-status-error); border-color: var(--color-status-error); }
 	}
 	.bulb {
-		width: 28px;
-		height: 28px;
+		width: 36px;
+		height: 36px;
 		border-radius: 50%;
-		border: 2px solid #333;
+		border: 2px solid var(--color-border-strong);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 		position: relative;
 	}
 	.status-ok.is-on .bulb {
-		background: #ffd43b;
-		border-color: #e8a400;
-		box-shadow: 0 0 10px 3px rgba(255, 212, 59, 0.8);
+		background: var(--color-status-on);
+		border-color: var(--color-status-on);
+		box-shadow: 0 0 12px 4px var(--color-status-on-glow);
 	}
 	.status-ok.is-off .bulb {
-		background: #495057;
-		border-color: #212529;
+		background: var(--color-status-off);
+		border-color: var(--color-border-strong);
 	}
 	.status-stale .bulb {
 		border-style: dashed;
+		border-color: var(--color-status-stale);
 	}
 	.status-error .bulb {
 		background: repeating-linear-gradient(
 			45deg,
-			#adb5bd,
-			#adb5bd 4px,
-			#e9ecef 4px,
-			#e9ecef 8px
+			var(--color-status-error),
+			var(--color-status-error) 4px,
+			var(--color-surface-elevated) 4px,
+			var(--color-surface-elevated) 8px
 		);
-		border-color: #868e96;
+		border-color: var(--color-status-error);
 	}
 	.badge {
 		position: absolute;
 		top: -6px;
 		right: -6px;
-		width: 16px;
-		height: 16px;
+		width: 18px;
+		height: 18px;
 		border-radius: 50%;
-		font-size: 11px;
-		line-height: 16px;
+		font-size: 12px;
+		line-height: 18px;
 		text-align: center;
 		font-weight: bold;
 		color: white;
 	}
 	.stale-badge {
-		background: #f08c00;
+		background: var(--color-status-stale);
 	}
 	.error-badge {
-		background: #e03131;
+		background: var(--color-status-error);
 	}
 	.label {
 		font-size: 11px;
-		background: rgba(255, 255, 255, 0.85);
+		font-family: var(--font-ui);
+		background: var(--color-surface);
+		color: var(--color-text);
 		padding: 0 4px;
 		border-radius: 3px;
 		white-space: nowrap;
 		max-width: 120px;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		box-shadow: var(--shadow-card);
 	}
 </style>

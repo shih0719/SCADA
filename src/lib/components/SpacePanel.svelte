@@ -91,14 +91,48 @@
 </section>
 
 <style>
-	.panel { margin-bottom: 1rem; }
-	.space-list { list-style: none; padding: 0; margin: 0 0 0.5rem; }
-	.space-list li { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
-	.space-list li.selected .space-btn { font-weight: bold; background: #e7f5ff; }
-	.space-btn { flex: 1; text-align: left; padding: 4px 8px; border: 1px solid #ddd; background: white; cursor: pointer; }
-	.row { display: flex; gap: 4px; margin-top: 4px; }
+	.panel { margin-bottom: 0; }
+	.panel h2 { color: var(--color-text); font-size: 1rem; margin-top: 0; }
+	.space-list { list-style: none; padding: 0; margin: 0 0 var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
+	.space-list li { display: flex; align-items: center; gap: var(--space-2); }
+	.space-list li.selected .space-btn { font-weight: 600; background: var(--color-accent-muted); border-color: var(--color-accent); color: var(--color-accent-hover); }
+	.space-btn {
+		flex: 1;
+		text-align: left;
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface-elevated);
+		color: var(--color-text);
+		cursor: pointer;
+	}
+	.space-btn:hover { border-color: var(--color-border-strong); }
+	.row { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
 	.row input { flex: 1; }
-	.danger { color: #e03131; border-color: #e03131; }
-	.small { padding: 2px 6px; }
-	.error { color: #e03131; font-size: 13px; }
+	input {
+		background: var(--color-surface-elevated);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		color: var(--color-text);
+		padding: var(--space-2) var(--space-3);
+		font-family: var(--font-ui);
+	}
+	input:focus {
+		outline: 2px solid var(--color-accent);
+		outline-offset: -1px;
+	}
+	button {
+		background: var(--color-accent);
+		color: var(--color-bg);
+		border: 1px solid var(--color-accent);
+		border-radius: var(--radius-sm);
+		padding: var(--space-2) var(--space-3);
+		font-family: var(--font-ui);
+		cursor: pointer;
+	}
+	button:hover { background: var(--color-accent-hover); }
+	.danger { background: transparent; color: var(--color-status-error); border-color: var(--color-status-error); }
+	.danger:hover { background: var(--color-status-error-bg); }
+	.small { padding: var(--space-1) var(--space-2); }
+	.error { color: var(--color-status-error); font-size: 13px; }
 </style>

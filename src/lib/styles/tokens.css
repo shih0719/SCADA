@@ -1,0 +1,71 @@
+/*
+ * Design tokens for the lighting SCADA UI.
+ *
+ * Visual direction: dark industrial control-panel aesthetic (not a generic
+ * marketing/web look). Status colors are the single source of truth for
+ * on/off/error/stale everywhere in the app — components should reference
+ * these variables, never hardcode a hex value for a status color.
+ */
+
+:root {
+	/* ---- Surfaces (dark, layered) ---- */
+	--color-bg: #0f1419; /* page background, deepest layer */
+	--color-surface: #1a1f26; /* panel/card background */
+	--color-surface-elevated: #232a33; /* hover/active surface, nested cards */
+	--color-border: #2d3540;
+	--color-border-strong: #3d4756;
+
+	/* ---- Text ---- */
+	--color-text: #e4e7eb;
+	--color-text-secondary: #9aa4b2;
+	--color-text-muted: #6b7684;
+
+	/* ---- Brand / interactive accent ---- */
+	--color-accent: #4dabf7;
+	--color-accent-hover: #74c0fc;
+	--color-accent-muted: rgba(77, 171, 247, 0.15);
+
+	/* ---- Circuit / status colors (single source of truth) ---- */
+	--color-status-on: #ffd43b; /* lit bulb amber */
+	--color-status-on-glow: rgba(255, 212, 59, 0.45);
+	--color-status-off: #495057; /* dim/unlit */
+	--color-status-error: #ff6b6b; /* offline/unknown — never confuse with on/off */
+	--color-status-error-bg: rgba(255, 107, 107, 0.15);
+	--color-status-stale: #ffa94d; /* data aging warning accent */
+	--color-status-warning-bg: rgba(255, 169, 77, 0.15);
+	--color-status-ok: #51cf66; /* healthy connection (status page) */
+	--color-status-ok-bg: rgba(81, 207, 102, 0.15);
+	--color-status-degraded: #ff6b6b;
+
+	/* ---- Semantic banners ---- */
+	--color-danger-bg: #2a1618;
+	--color-danger-border: #5c2b2e;
+	--color-danger-text: #ff8787;
+	--color-warning-bg: #2b2110;
+	--color-warning-border: #5c4a1f;
+	--color-warning-text: #ffd43b;
+
+	/* ---- Typography ---- */
+	--font-ui:
+		system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	--font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Consolas', monospace;
+
+	/* ---- Spacing scale (4px base) ---- */
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-5: 20px;
+	--space-6: 24px;
+	--space-8: 32px;
+	--space-12: 48px;
+
+	/* ---- Radius ---- */
+	--radius-sm: 6px;
+	--radius-md: 10px;
+	--radius-lg: 14px;
+
+	/* ---- Shadow (subtle, dark theme) ---- */
+	--shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+	--shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.5);
+}

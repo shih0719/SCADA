@@ -32,30 +32,42 @@
 
 <style>
 	.panel {
-		margin-bottom: 1rem;
+		margin-bottom: var(--space-4);
+	}
+	.panel h2 {
+		color: var(--color-text);
+		font-size: 1rem;
 	}
 	.space-list {
 		list-style: none;
 		padding: 0;
 		margin: 0;
-	}
-	.space-list li {
-		margin-bottom: 2px;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
 	}
 	.space-list li.selected .space-btn {
-		font-weight: bold;
-		background: #e7f5ff;
+		font-weight: 600;
+		background: var(--color-accent-muted);
+		border-color: var(--color-accent);
+		color: var(--color-accent-hover);
 	}
 	.space-btn {
 		width: 100%;
 		text-align: left;
-		padding: 4px 8px;
-		border: 1px solid #ddd;
-		background: white;
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface-elevated);
+		color: var(--color-text);
 		cursor: pointer;
+		box-shadow: var(--shadow-card);
+	}
+	.space-btn:hover {
+		border-color: var(--color-border-strong);
 	}
 	.empty {
-		color: #555;
+		color: var(--color-text-muted);
 		font-size: 13px;
 	}
 </style>

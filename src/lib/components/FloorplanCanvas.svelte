@@ -104,13 +104,15 @@
 	.canvas-wrapper {
 		position: relative;
 		width: 100%;
-		border: 1px solid #ccc;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
 		overflow: hidden;
-		background: #f1f3f5;
+		background: var(--color-surface);
+		box-shadow: var(--shadow-card);
 	}
 	.canvas-wrapper.placing {
 		cursor: crosshair;
-		outline: 2px dashed #1971c2;
+		outline: 2px dashed var(--color-accent);
 	}
 	.canvas-wrapper img {
 		width: 100%;
@@ -120,11 +122,11 @@
 		pointer-events: none;
 	}
 	.hint {
-		color: #555;
+		color: var(--color-text-secondary);
 		font-size: 14px;
 	}
 	.placing-hint {
-		color: #1971c2;
+		color: var(--color-accent);
 		font-weight: 600;
 	}
 </style>

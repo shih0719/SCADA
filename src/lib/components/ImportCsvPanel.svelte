@@ -155,9 +155,9 @@
 								<td>{r.name}</td>
 								<td>
 									{#if r.status === 'error'}
-										錯誤：{r.error}
+										<span class="tag tag-err">錯誤</span> {r.error}
 									{:else if r.warning}
-										警告：{r.warning}
+										<span class="tag tag-warn">警告</span> {r.warning}
 									{:else}
 										OK
 									{/if}
@@ -206,98 +206,137 @@
 
 <style>
 	.panel {
-		margin-bottom: 1rem;
+		margin-bottom: 0;
+	}
+	.panel h2 {
+		color: var(--color-text);
+		font-size: 1rem;
+		margin-top: 0;
+	}
+	.panel h3 {
+		color: var(--color-text);
+		font-size: 0.95rem;
 	}
 	.hint {
 		font-size: 12px;
-		color: #555;
-		margin: 0 0 6px;
+		color: var(--color-text-secondary);
+		margin: 0 0 var(--space-2);
 	}
 	.filename {
 		font-size: 12px;
-		margin: 4px 0;
+		margin: var(--space-1) 0;
+		color: var(--color-text-secondary);
 	}
 	.busy {
 		font-size: 12px;
-		color: #1971c2;
+		color: var(--color-accent);
 	}
 	.error {
-		color: #e03131;
+		color: var(--color-status-error);
 		font-size: 13px;
 	}
 	.summary {
 		font-size: 13px;
 		font-weight: 600;
+		color: var(--color-text);
 	}
 	.block {
-		margin: 8px 0;
+		margin: var(--space-2) 0;
 		font-size: 12px;
+		color: var(--color-text);
 	}
 	.block ul {
-		margin: 4px 0;
+		margin: var(--space-1) 0;
 		padding-left: 18px;
 	}
 	.block.new {
-		background: #e7f5ff;
-		border-radius: 4px;
-		padding: 6px 8px;
+		background: var(--color-accent-muted);
+		border-radius: var(--radius-sm);
+		padding: var(--space-2) var(--space-3);
 	}
 	.block.err {
-		background: #fff5f5;
-		border-radius: 4px;
-		padding: 6px 8px;
+		background: var(--color-danger-bg);
+		border-radius: var(--radius-sm);
+		padding: var(--space-2) var(--space-3);
 	}
 	table {
 		width: 100%;
 		border-collapse: collapse;
 		font-size: 12px;
-		margin-top: 4px;
+		margin-top: var(--space-2);
 	}
 	th,
 	td {
-		border: 1px solid #ddd;
-		padding: 3px 5px;
+		border: 1px solid var(--color-border);
+		padding: var(--space-1) var(--space-2);
 		text-align: left;
+		color: var(--color-text);
+	}
+	th {
+		background: var(--color-surface-elevated);
+		color: var(--color-text-secondary);
 	}
 	tr.err {
-		background: #fff5f5;
-		color: #c92a2a;
+		background: var(--color-danger-bg);
+		color: var(--color-danger-text);
 	}
 	tr.warn {
-		background: #fff9db;
-		color: #966a08;
+		background: var(--color-warning-bg);
+		color: var(--color-warning-text);
 	}
 	tr.update {
-		background: #e7f5ff;
+		background: var(--color-accent-muted);
 	}
 	.tag {
 		display: inline-block;
 		font-size: 11px;
 		font-weight: 600;
 		padding: 1px 5px;
-		border-radius: 3px;
+		border-radius: var(--radius-sm);
 		white-space: nowrap;
 	}
 	.tag-create {
-		background: #d3f9d8;
-		color: #2b8a3e;
+		background: var(--color-accent-muted);
+		color: var(--color-accent-hover);
 	}
 	.tag-update {
-		background: #d0ebff;
-		color: #1864ab;
+		background: var(--color-status-ok-bg);
+		color: var(--color-status-ok);
 	}
 	.tag-err {
-		background: #ffe3e3;
-		color: #c92a2a;
+		background: var(--color-status-error-bg);
+		color: var(--color-status-error);
+	}
+	.tag-warn {
+		background: var(--color-warning-bg);
+		color: var(--color-warning-text);
 	}
 	.actions {
-		margin-top: 8px;
+		margin-top: var(--space-3);
 		display: flex;
-		gap: 6px;
+		gap: var(--space-2);
+	}
+	.actions button,
+	.panel > input[type='file'] {
+		background: var(--color-accent);
+		color: var(--color-bg);
+		border: 1px solid var(--color-accent);
+		border-radius: var(--radius-sm);
+		padding: var(--space-2) var(--space-3);
+		font-family: var(--font-ui);
+		cursor: pointer;
+	}
+	.actions button:hover {
+		background: var(--color-accent-hover);
+	}
+	.actions button:last-child {
+		background: transparent;
+		color: var(--color-text-secondary);
+		border-color: var(--color-border);
 	}
 	.result {
-		margin-top: 10px;
-		border-top: 1px solid #ddd;
-		padding-top: 8px;
+		margin-top: var(--space-3);
+		border-top: 1px solid var(--color-border);
+		padding-top: var(--space-2);
 	}
 </style>

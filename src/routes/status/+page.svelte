@@ -83,15 +83,28 @@
 			{#if health}
 				{#each health.devices as d (d.device_id)}
 					{@const m = metricsFor(d.device_id)}
+					{@const successPct = m?.success_rate !== null && m?.success_rate !== undefined ? Math.round(m.success_rate * 100) : null}
 					<tr>
 						<td>{d.name}</td>
-						<td class:ok={d.connected} class:down={!d.connected}>
-							{d.connected ? 'connected' : 'disconnected'}
+						<td>
+							<span class="dot" class:dot-ok={d.connected} class:dot-down={!d.connected}></span>
+							<span class:ok={d.connected} class:down={!d.connected}>
+								{d.connected ? 'connected' : 'disconnected'}
+							</span>
 						</td>
-						<td>{fmtPercent(m?.success_rate ?? null)}</td>
-						<td>{fmtMs(m?.avg_latency_ms ?? null)}</td>
-						<td class:warn={d.consecutive_failures >= 3}>{d.consecutive_failures}</td>
-						<td>{fmtTime(d.last_success_at)}</td>
+						<td class="num-cell">
+							<div class="rate-cell">
+								<span class="num">{fmtPercent(m?.success_rate ?? null)}</span>
+								{#if successPct !== null}
+									<div class="rate-bar">
+										<div class="rate-bar-fill" style="width: {successPct}%;"></div>
+									</div>
+								{/if}
+							</div>
+						</td>
+						<td class="num">{fmtMs(m?.avg_latency_ms ?? null)}</td>
+						<td class="num" class:warn={d.consecutive_failures >= 3}>{d.consecutive_failures}</td>
+						<td class="num">{fmtTime(d.last_success_at)}</td>
 					</tr>
 				{/each}
 			{/if}
@@ -105,61 +118,117 @@
 <style>
 	:global(body) {
 		margin: 0;
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
+		background: var(--color-bg);
+		color: var(--color-text);
 	}
 	.page {
-		padding: 1rem 1.5rem;
+		padding: var(--space-4) var(--space-6);
+	}
+	.page h1 {
+		color: var(--color-text);
 	}
 	.nav a {
-		color: #1971c2;
+		color: var(--color-accent);
 		text-decoration: none;
 		font-size: 13px;
+	}
+	.nav a:hover {
+		color: var(--color-accent-hover);
+	}
+	.overall {
+		color: var(--color-text-secondary);
+		font-size: 14px;
 	}
 	table {
 		border-collapse: collapse;
 		width: 100%;
-		margin-top: 1rem;
+		margin-top: var(--space-4);
+		background: var(--color-surface);
+		border-radius: var(--radius-md);
+		overflow: hidden;
+		box-shadow: var(--shadow-card);
 	}
 	th,
 	td {
-		border: 1px solid #ddd;
-		padding: 6px 10px;
+		border: 1px solid var(--color-border);
+		padding: var(--space-2) var(--space-3);
 		text-align: left;
 		font-size: 14px;
+		color: var(--color-text);
 	}
 	th {
-		background: #f1f3f5;
+		background: var(--color-surface-elevated);
+		color: var(--color-text-secondary);
+		font-weight: 600;
+	}
+	.num,
+	.num-cell {
+		font-family: var(--font-mono);
+		text-align: right;
+	}
+	.dot {
+		display: inline-block;
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		margin-right: var(--space-2);
+	}
+	.dot-ok {
+		background: var(--color-status-ok);
+		box-shadow: 0 0 6px 1px var(--color-status-ok);
+	}
+	.dot-down {
+		background: var(--color-status-error);
+		box-shadow: 0 0 6px 1px var(--color-status-error);
+	}
+	.rate-cell {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 4px;
+	}
+	.rate-bar {
+		width: 80px;
+		height: 6px;
+		border-radius: var(--radius-sm);
+		background: var(--color-surface-elevated);
+		overflow: hidden;
+	}
+	.rate-bar-fill {
+		height: 100%;
+		background: var(--color-status-ok);
 	}
 	.ok {
-		color: #2b8a3e;
+		color: var(--color-status-ok);
 		font-weight: 600;
 	}
 	.down {
-		color: #c92a2a;
+		color: var(--color-status-error);
 		font-weight: 600;
 	}
 	.warn {
-		color: #c92a2a;
+		color: var(--color-status-error);
 		font-weight: 600;
 	}
 	.status-badge {
 		padding: 2px 8px;
-		border-radius: 4px;
+		border-radius: var(--radius-sm);
 		font-weight: 600;
 	}
 	.status-ok {
-		background: #d3f9d8;
-		color: #2b8a3e;
+		background: var(--color-status-ok-bg);
+		color: var(--color-status-ok);
 	}
 	.status-degraded {
-		background: #ffe3e3;
-		color: #c92a2a;
+		background: var(--color-status-error-bg);
+		color: var(--color-status-error);
 	}
 	.error-banner {
-		background: #fff5f5;
-		color: #c92a2a;
-		border: 1px solid #ffc9c9;
-		padding: 6px 10px;
-		border-radius: 4px;
+		background: var(--color-danger-bg);
+		color: var(--color-danger-text);
+		border: 1px solid var(--color-danger-border);
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius-sm);
 	}
 </style>

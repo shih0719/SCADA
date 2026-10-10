@@ -156,24 +156,32 @@
 	<aside class="sidebar">
 		<p class="nav"><a href="/">← 返回操作頁面</a></p>
 		<h1>燈控 SCADA — 編輯模式</h1>
-		<SpacePanel
-			{spaces}
-			selectedId={selectedSpaceId}
-			onSelect={selectSpace}
-			onChanged={onSpacesChanged}
-		/>
-		<DevicePanel {devices} onChanged={reloadDevices} />
-		{#if selectedSpace}
-			<CircuitPanel
-				spaceId={selectedSpace.id}
-				{circuits}
-				{devices}
-				{placingCircuitId}
-				onChanged={onCircuitsChanged}
-				onStartPlacing={startPlacing}
+		<div class="card">
+			<SpacePanel
+				{spaces}
+				selectedId={selectedSpaceId}
+				onSelect={selectSpace}
+				onChanged={onSpacesChanged}
 			/>
+		</div>
+		<div class="card">
+			<DevicePanel {devices} onChanged={reloadDevices} />
+		</div>
+		{#if selectedSpace}
+			<div class="card">
+				<CircuitPanel
+					spaceId={selectedSpace.id}
+					{circuits}
+					{devices}
+					{placingCircuitId}
+					onChanged={onCircuitsChanged}
+					onStartPlacing={startPlacing}
+				/>
+			</div>
 		{/if}
-		<ImportCsvPanel onImported={onCsvImported} />
+		<div class="card">
+			<ImportCsvPanel onImported={onCsvImported} />
+		</div>
 	</aside>
 
 	<main class="main">
@@ -199,42 +207,64 @@
 <style>
 	:global(body) {
 		margin: 0;
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
+		background: var(--color-bg);
+		color: var(--color-text);
 	}
 	.layout {
 		display: flex;
 		height: 100vh;
 	}
 	.sidebar {
-		width: 320px;
+		width: 360px;
 		flex-shrink: 0;
 		overflow-y: auto;
-		padding: 1rem;
-		border-right: 1px solid #ddd;
+		padding: var(--space-4);
+		border-right: 1px solid var(--color-border);
 		box-sizing: border-box;
+		background: var(--color-surface);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
 	}
 	.sidebar h1 {
 		font-size: 1.1rem;
 		margin-top: 0;
+		color: var(--color-text);
 	}
 	.nav {
-		margin: 0 0 0.5rem;
+		margin: 0;
 	}
 	.nav a {
-		color: #1971c2;
+		color: var(--color-accent);
 		text-decoration: none;
 		font-size: 13px;
 	}
+	.nav a:hover {
+		color: var(--color-accent-hover);
+	}
+	.card {
+		background: var(--color-surface-elevated);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		box-shadow: var(--shadow-card);
+		padding: var(--space-4);
+	}
 	.main {
 		flex: 1;
-		padding: 1rem;
+		padding: var(--space-4);
 		overflow-y: auto;
+		background: var(--color-bg);
+		color: var(--color-text);
+	}
+	.main h2 {
+		color: var(--color-text);
 	}
 	.error-banner {
-		background: #fff5f5;
-		color: #c92a2a;
-		border: 1px solid #ffc9c9;
-		padding: 6px 10px;
-		border-radius: 4px;
+		background: var(--color-danger-bg);
+		color: var(--color-danger-text);
+		border: 1px solid var(--color-danger-border);
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius-sm);
 	}
 </style>

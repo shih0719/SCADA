@@ -19,6 +19,11 @@
 
 	const selectedSpace = $derived(spaces.find((s) => s.id === selectedSpaceId) ?? null);
 
+	// UI-only summary derived from the existing states Map — no new API calls or data flow.
+	const offlineCount = $derived(
+		Array.from(states.values()).filter((s) => s.status === 'error').length
+	);
+
 	let statusTimer: ReturnType<typeof setInterval> | undefined;
 	let restartNoticeTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -151,6 +156,12 @@
 			<a href="/edit">編輯模式 →</a>
 			<a href="/status">系統狀態 →</a>
 		</p>
+		<p class="summary">
+			<span class="summary-item">{states.size} 個迴路</span>
+			{#if offlineCount > 0}
+				<span class="summary-item summary-offline">{offlineCount} 個離線</span>
+			{/if}
+		</p>
 		<SpaceSelector spaces={spaces} selectedId={selectedSpaceId} onSelect={selectSpace} />
 	</aside>
 
@@ -178,7 +189,9 @@
 <style>
 	:global(body) {
 		margin: 0;
-		font-family: system-ui, sans-serif;
+		font-family: var(--font-ui);
+		background: var(--color-bg);
+		color: var(--color-text);
 	}
 	.layout {
 		display: flex;
@@ -188,42 +201,70 @@
 		width: 320px;
 		flex-shrink: 0;
 		overflow-y: auto;
-		padding: 1rem;
-		border-right: 1px solid #ddd;
+		padding: var(--space-4);
+		border-right: 1px solid var(--color-border);
 		box-sizing: border-box;
+		background: var(--color-surface);
 	}
 	.sidebar h1 {
 		font-size: 1.1rem;
 		margin-top: 0;
+		color: var(--color-text);
 	}
 	.nav {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
-		margin: 0 0 1rem;
+		gap: var(--space-1);
+		margin: 0 0 var(--space-3);
 	}
 	.nav a {
-		color: #1971c2;
+		color: var(--color-accent);
 		text-decoration: none;
 		font-size: 13px;
 	}
+	.nav a:hover {
+		color: var(--color-accent-hover);
+	}
+	.summary {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-4);
+	}
+	.summary-item {
+		font-size: 12px;
+		font-family: var(--font-mono);
+		padding: var(--space-1) var(--space-2);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface-elevated);
+		color: var(--color-text-secondary);
+	}
+	.summary-offline {
+		background: var(--color-status-error-bg);
+		color: var(--color-status-error);
+	}
 	.main {
 		flex: 1;
-		padding: 1rem;
+		padding: var(--space-4);
 		overflow-y: auto;
+		background: var(--color-bg);
+		color: var(--color-text);
+	}
+	.main h2 {
+		color: var(--color-text);
 	}
 	.error-banner {
-		background: #fff5f5;
-		color: #c92a2a;
-		border: 1px solid #ffc9c9;
-		padding: 6px 10px;
-		border-radius: 4px;
+		background: var(--color-danger-bg);
+		color: var(--color-danger-text);
+		border: 1px solid var(--color-danger-border);
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius-sm);
 	}
 	.restart-banner {
-		background: #fff9db;
-		color: #997404;
-		border: 1px solid #ffe066;
-		padding: 6px 10px;
-		border-radius: 4px;
+		background: var(--color-warning-bg);
+		color: var(--color-warning-text);
+		border: 1px solid var(--color-warning-border);
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius-sm);
 	}
 </style>

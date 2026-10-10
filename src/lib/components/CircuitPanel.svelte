@@ -116,18 +116,48 @@
 </section>
 
 <style>
-	.panel { margin-bottom: 1rem; }
-	.export { margin-bottom: 6px; font-size: 12px; padding: 3px 8px; }
-	.list { list-style: none; padding: 0; margin: 0 0 0.5rem; font-size: 13px; }
-	.list li { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
-	.name { font-weight: 600; min-width: 80px; }
-	.meta { color: #555; flex: 1; }
-	.unpositioned { background: #fff9db; padding: 6px; border-radius: 4px; margin-bottom: 8px; }
-	.unpositioned p { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
-	button.active { background: #1971c2; color: white; }
-	.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px; }
+	.panel { margin-bottom: 0; }
+	.panel h2 { color: var(--color-text); font-size: 1rem; margin-top: 0; }
+	.export { margin-bottom: var(--space-2); font-size: 12px; padding: var(--space-1) var(--space-2); }
+	.list { list-style: none; padding: 0; margin: 0 0 var(--space-2); font-size: 13px; }
+	.list li { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); }
+	.name { font-weight: 600; min-width: 80px; color: var(--color-text); }
+	.meta { color: var(--color-text-secondary); font-family: var(--font-mono); flex: 1; }
+	.unpositioned {
+		background: var(--color-warning-bg);
+		border: 1px solid var(--color-warning-border);
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius-sm);
+		margin-bottom: var(--space-3);
+	}
+	.unpositioned p { margin: 0 0 var(--space-1); font-size: 13px; font-weight: 600; color: var(--color-warning-text); }
+	.grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-top: var(--space-2); }
 	.grid button { grid-column: span 2; }
-	.danger { color: #e03131; border-color: #e03131; }
-	.small { padding: 2px 6px; }
-	.error { color: #e03131; font-size: 13px; }
+	input, select {
+		background: var(--color-surface-elevated);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		color: var(--color-text);
+		padding: var(--space-2) var(--space-3);
+		font-family: var(--font-ui);
+	}
+	input:focus, select:focus {
+		outline: 2px solid var(--color-accent);
+		outline-offset: -1px;
+	}
+	button {
+		background: var(--color-accent);
+		color: var(--color-bg);
+		border: 1px solid var(--color-accent);
+		border-radius: var(--radius-sm);
+		padding: var(--space-2) var(--space-3);
+		font-family: var(--font-ui);
+		cursor: pointer;
+	}
+	button:hover { background: var(--color-accent-hover); }
+	button.active { background: var(--color-accent-hover); color: var(--color-bg); }
+	.danger { background: transparent; color: var(--color-status-error); border-color: var(--color-status-error); }
+	.danger:hover { background: var(--color-status-error-bg); }
+	.small { padding: var(--space-1) var(--space-2); }
+	.error { color: var(--color-status-error); font-size: 13px; }
 </style>
