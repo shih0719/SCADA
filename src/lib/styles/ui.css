@@ -1,0 +1,171 @@
+/*
+ * Shared UI primitives used across pages (operate / edit / automation).
+ * Page- and component-specific styling stays scoped in each .svelte file;
+ * only patterns that repeat across pages live here.
+ */
+
+/* Blueprint-style dot grid for main work areas. Static CSS — no GPU cost. */
+.blueprint-bg {
+	background-color: var(--color-bg);
+	background-image: radial-gradient(rgba(154, 164, 178, 0.09) 1px, transparent 1px);
+	background-size: 22px 22px;
+}
+
+/* Small mono count badge next to a section title: "Spaces (3)" */
+.count-badge {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	font-weight: 600;
+	padding: 1px 7px;
+	border-radius: 999px;
+	color: var(--color-text-secondary);
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+}
+
+/* Section title with an optional count badge */
+.section-title {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	font-size: 1rem;
+	margin: 0 0 var(--space-3);
+	color: var(--color-text);
+}
+
+/* ---- Stat chips (page header summaries) ---- */
+.stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+.stat {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	color: var(--color-text-secondary);
+	padding: 4px 10px;
+	border-radius: 999px;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+}
+.stat b {
+	color: var(--color-text);
+	font-family: var(--font-mono);
+}
+.stat.warn {
+	background: var(--color-warning-bg);
+	border-color: var(--color-warning-border);
+}
+.stat.warn b {
+	color: var(--color-warning-text);
+}
+.stat.err {
+	background: var(--color-status-error-bg);
+	border-color: var(--color-danger-border);
+}
+.stat.err b {
+	color: var(--color-status-error);
+}
+.stat .dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--color-status-off);
+}
+.stat.on .dot {
+	background: var(--color-status-on);
+	box-shadow: 0 0 6px var(--color-status-on-glow);
+}
+.stat.live {
+	color: var(--color-status-ok);
+}
+.stat.live.stale {
+	color: var(--color-status-error);
+}
+.stat .pulse {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: currentColor;
+	animation: ui-pulse 1.6s ease-out infinite;
+}
+@keyframes ui-pulse {
+	0% {
+		box-shadow: 0 0 0 0 currentColor;
+	}
+	70%,
+	100% {
+		box-shadow: 0 0 0 6px transparent;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.stat .pulse {
+		animation: none;
+	}
+}
+
+/* Mono uppercase label above a page/section heading */
+.eyebrow {
+	margin: 0;
+	font-family: var(--font-mono);
+	font-size: 11px;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+/* Framed container around the floorplan canvas */
+.canvas-panel {
+	padding: var(--space-3);
+	border-radius: var(--radius-lg);
+	background: rgba(26, 31, 38, 0.7);
+	border: 1px solid var(--color-border);
+	box-shadow: var(--shadow-elevated);
+}
+
+/* Centered "nothing here yet" placeholder */
+.empty-state {
+	max-width: 420px;
+	margin: 12vh auto 0;
+	text-align: center;
+	padding: var(--space-8);
+	border: 1px dashed var(--color-border-strong);
+	border-radius: var(--radius-lg);
+	background: rgba(26, 31, 38, 0.7);
+}
+.empty-state .empty-icon {
+	font-size: 36px;
+	color: var(--color-accent);
+}
+.empty-state h2 {
+	font-size: 1.1rem;
+	margin: var(--space-3) 0 var(--space-2);
+	color: var(--color-text);
+}
+.empty-state p {
+	margin: 0;
+	font-size: 13px;
+	color: var(--color-text-secondary);
+	line-height: 1.6;
+}
+
+/* Elevated sidebar / grid card */
+.ui-card {
+	background: var(--color-surface-elevated);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-card);
+	padding: var(--space-4);
+	transition: border-color 150ms;
+}
+.ui-card:hover {
+	border-color: var(--color-border-strong);
+}
+
+/* Thin scrollbars for scrolling side panels */
+.thin-scroll {
+	scrollbar-width: thin;
+	scrollbar-color: var(--color-border-strong) transparent;
+}

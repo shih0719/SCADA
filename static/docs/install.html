@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>安裝架設 — 燈控 SCADA 使用說明</title>
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%23ffd43b'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="/docs/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="/docs/index.html"><span class="lamp"></span>燈控 SCADA <small>DOCS</small></a>
+		<nav class="topnav" aria-label="文件導覽">
+			<a href="/docs/install.html" class="current" aria-current="page">安裝架設</a>
+			<a href="/docs/usage.html">配置使用</a>
+			<a href="/">回到系統 →</a>
+		</nav>
+	</header>
+
+	<div class="layout">
+		<nav class="toc" aria-label="本頁目錄">
+			<p>本頁目錄</p>
+			<ol>
+				<li><a href="#overview">系統架構</a></li>
+				<li><a href="#requirements">環境需求</a></li>
+				<li><a href="#install">安裝程式</a></li>
+				<li><a href="#trial">用模擬器試跑</a></li>
+				<li><a href="#production">正式部署</a></li>
+				<li><a href="#env">.env 設定說明</a></li>
+				<li><a href="#service">設成常駐服務</a></li>
+				<li><a href="#network">網路與防火牆</a></li>
+				<li><a href="#data">資料位置與備份</a></li>
+				<li><a href="#upgrade">升級更新</a></li>
+				<li><a href="#troubleshoot">疑難排解</a></li>
+				<li><a href="#security">安全注意事項</a></li>
+			</ol>
+		</nav>
+
+		<main>
+			<section class="hero">
+				<p class="eyebrow">Part 1 · Installation</p>
+				<h1>安裝架設</h1>
+				<p>
+					給負責架設系統的人：從準備主機、安裝程式、先用模擬器試跑，到正式上線、設成開機自動啟動。
+					架好之後，空間、設備、迴路的設定請看<a href="/docs/usage.html">配置使用</a>。
+				</p>
+			</section>
+
+			<h2 id="overview"><span class="num">01</span>系統架構</h2>
+			<p>
+				整套系統是<strong>一支 Node.js 程式</strong>，同時負責三件事：提供網頁畫面與 API、在背景定時向 Modbus 設備讀取迴路狀態，以及依排程自動套用場景。
+				資料存在本機的 SQLite 檔案，不需要另外安裝資料庫。
+			</p>
+			<div class="diagram">
+				<svg viewBox="0 0 760 270" role="img" aria-labelledby="arch-title">
+					<title id="arch-title">架構圖：瀏覽器經 HTTP 連到 Node 伺服器，伺服器以 Modbus TCP 連到配電箱 Gateway，資料存在 SQLite</title>
+					<defs>
+						<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+							<path d="M0 0L10 5L0 10z" fill="#6b7684" />
+						</marker>
+					</defs>
+					<g font-family="system-ui, sans-serif" font-size="13" fill="#e4e7eb">
+						<rect x="10" y="95" width="150" height="80" rx="10" fill="#232a33" stroke="#3d4756" />
+						<text x="85" y="128" text-anchor="middle" font-weight="700">操作人員瀏覽器</text>
+						<text x="85" y="150" text-anchor="middle" fill="#9aa4b2" font-size="12">每 1.5 秒查詢狀態</text>
+
+						<rect x="250" y="20" width="250" height="230" rx="12" fill="#1a1f26" stroke="#4dabf7" />
+						<text x="375" y="46" text-anchor="middle" font-weight="700" fill="#74c0fc">Node.js 伺服器（npm start）</text>
+						<rect x="270" y="62" width="210" height="44" rx="8" fill="#232a33" stroke="#3d4756" />
+						<text x="375" y="89" text-anchor="middle">網頁畫面 + REST API</text>
+						<rect x="270" y="116" width="210" height="44" rx="8" fill="#232a33" stroke="#3d4756" />
+						<text x="375" y="143" text-anchor="middle">Modbus 輪詢器</text>
+						<rect x="270" y="170" width="210" height="44" rx="8" fill="#232a33" stroke="#3d4756" />
+						<text x="375" y="197" text-anchor="middle">排程器（每 30 秒檢查）</text>
+
+						<rect x="590" y="40" width="160" height="80" rx="10" fill="#232a33" stroke="#3d4756" />
+						<text x="670" y="73" text-anchor="middle" font-weight="700">配電箱 Gateway</text>
+						<text x="670" y="95" text-anchor="middle" fill="#9aa4b2" font-size="12">Modbus TCP · 線圈</text>
+
+						<rect x="590" y="160" width="160" height="80" rx="10" fill="#232a33" stroke="#3d4756" />
+						<text x="670" y="193" text-anchor="middle" font-weight="700">本機資料夾</text>
+						<text x="670" y="215" text-anchor="middle" fill="#9aa4b2" font-size="12">data/ · uploads/</text>
+					</g>
+					<g stroke="#6b7684" stroke-width="1.5" fill="none">
+						<path d="M160 135 H246" marker-end="url(#arr)" marker-start="url(#arr)" />
+						<path d="M480 138 C540 138 540 80 586 80" marker-end="url(#arr)" marker-start="url(#arr)" />
+						<path d="M480 192 C540 192 540 200 586 200" marker-end="url(#arr)" />
+					</g>
+					<g font-family="ui-monospace, monospace" font-size="11" fill="#9aa4b2">
+						<text x="203" y="126" text-anchor="middle">HTTP</text>
+						<text x="545" y="44" text-anchor="middle">Modbus TCP</text>
+						<text x="545" y="58" text-anchor="middle">讀 FC1 / 寫 FC5</text>
+						<text x="540" y="186" text-anchor="middle">SQLite</text>
+					</g>
+				</svg>
+			</div>
+			<ul>
+				<li>瀏覽器<strong>不會</strong>直接連 Modbus 設備；畫面上的燈號是伺服器最近一次輪詢的結果，會有 1～2 秒延遲。</li>
+				<li>伺服器重啟後，迴路狀態要等下一輪輪詢才會恢復；設定資料存在 SQLite，不會遺失。</li>
+				<li>排程依<strong>伺服器主機的本機時間</strong>執行，請確認主機時區與時間正確。</li>
+			</ul>
+
+			<h2 id="requirements"><span class="num">02</span>環境需求</h2>
+			<div class="table-wrap">
+				<table>
+					<thead><tr><th>項目</th><th>需求</th></tr></thead>
+					<tbody>
+						<tr><td>作業系統</td><td>Windows 10/11、Windows Server，或 Linux（x64 / arm64）。</td></tr>
+						<tr><td>Node.js</td><td><strong>22.17 以上</strong>（SvelteKit 3 的最低需求）。到 <a href="https://nodejs.org/">nodejs.org</a> 下載 LTS 版，安裝時會一併裝好 npm。</td></tr>
+						<tr><td>網路</td><td>主機要能連到每台 Modbus TCP Gateway（通常是 TCP 502）；操作人員的電腦要能連到這台主機的網頁 port（預設 3000）。</td></tr>
+						<tr><td>硬碟</td><td>程式約 300 MB（含 <code>node_modules</code>）；資料視平面圖數量而定，通常幾十 MB 以內。</td></tr>
+						<tr><td>瀏覽器</td><td>新版 Chrome、Edge、Firefox 或 Safari。頁首的動態背景需要 WebGPU，不支援時會自動改成靜態背景，不影響功能。</td></tr>
+					</tbody>
+				</table>
+			</div>
+			<p>確認 Node.js 版本：</p>
+			<pre><code>node -v
+<span class="c"># 應顯示 v22.17.0 或更新</span></code></pre>
+			<div class="callout">
+				<span class="title">關於 better-sqlite3</span>
+				<p>資料庫套件 <code>better-sqlite3</code> 是原生模組。常見平台在 <code>npm install</code> 時會直接下載預先編譯好的檔案；如果主機沒有網路，或是平台比較少見，就會改成在本機編譯，這時需要先裝好 Python 和 C++ 編譯工具（Windows 是 Visual Studio Build Tools，Linux 是 <code>build-essential</code>）。</p>
+			</div>
+
+			<h2 id="install"><span class="num">03</span>安裝程式</h2>
+			<ol class="steps">
+				<li>
+					<strong>把專案資料夾放到主機上</strong>
+					<p>把整個 <code>stack-c-sveltekit</code> 資料夾複製到主機，例如 <code>C:\scada\stack-c-sveltekit</code> 或 <code>/opt/scada/stack-c-sveltekit</code>。<code>node_modules</code>、<code>build</code>、<code>data</code>、<code>uploads</code> 這幾個資料夾不用複製，之後會自動產生；如果是搬遷舊系統，請改看<a href="#data">資料位置與備份</a>。</p>
+				</li>
+				<li>
+					<strong>安裝相依套件</strong>
+					<p>在專案資料夾內執行：</p>
+					<pre><code>cd stack-c-sveltekit
+npm install</code></pre>
+					<p>最後出現 <code>found 0 vulnerabilities</code> 之類的訊息、沒有紅色的 <code>ERR!</code>，就是安裝成功。</p>
+				</li>
+			</ol>
+
+			<h2 id="trial"><span class="num">04</span>用模擬器試跑（不需要實體設備）</h2>
+			<p>專案內附一個 Modbus TCP 模擬器，可以在還沒接上實體 Gateway 之前，先確認整套流程能動。這一節用的是<strong>開發模式</strong>，只適合試用，正式上線請看下一節。</p>
+			<ol class="steps">
+				<li>
+					<strong>開第一個終端機，啟動模擬器</strong>
+					<pre><code>npm run simulator</code></pre>
+					<p>看到下面的訊息就代表模擬器在 <code>127.0.0.1:15020</code> 上提供 32 個線圈（位址 0–31，Slave ID 1）：</p>
+					<pre data-label="輸出"><code>Modbus TCP simulator listening on 127.0.0.1:15020 (unit id 1)
+Coils: 32 (addresses 0-31)
+Initial ON coils: 0, 2</code></pre>
+				</li>
+				<li>
+					<strong>開第二個終端機，啟動開發伺服器</strong>
+					<pre><code>npm run dev</code></pre>
+					<p>打開終端機上顯示的網址（通常是 <code>http://localhost:5173</code>）。</p>
+				</li>
+				<li>
+					<strong>建一筆設備指向模擬器</strong>
+					<p>到「編輯模式」→ Devices，填 IP <code>127.0.0.1</code>、Port <code>15020</code>、Slave ID <code>1</code>，再建空間和迴路。詳細步驟見<a href="/docs/usage.html#first-setup">配置使用：第一次配置</a>。</p>
+				</li>
+			</ol>
+			<p>模擬器的位址可以用環境變數修改：</p>
+			<div class="table-wrap">
+				<table>
+					<thead><tr><th>變數</th><th>預設值</th><th>說明</th></tr></thead>
+					<tbody>
+						<tr><td><code>SIM_HOST</code></td><td><code>127.0.0.1</code></td><td>監聽位址</td></tr>
+						<tr><td><code>SIM_PORT</code></td><td><code>15020</code></td><td>監聽 port</td></tr>
+						<tr><td><code>SIM_UNIT_ID</code></td><td><code>1</code></td><td>Slave / Unit ID</td></tr>
+						<tr><td><code>SIM_COIL_COUNT</code></td><td><code>32</code></td><td>線圈數量</td></tr>
+					</tbody>
+				</table>
+			</div>
+			<pre data-label="PowerShell"><code>$env:SIM_PORT = 1502; npm run simulator</code></pre>
+			<pre data-label="Linux / macOS"><code>SIM_PORT=1502 npm run simulator</code></pre>
+			<div class="callout">
+				<p>在模擬器的終端機按 <kbd>Ctrl</kbd>+<kbd>C</kbd> 停掉它，就能模擬設備離線：一個輪詢週期內，畫面上該設備的迴路會變成紅色斜線的「離線」圖示；重新啟動模擬器後會自動恢復。</p>
+			</div>
+
+			<h2 id="production"><span class="num">05</span>正式部署</h2>
+			<ol class="steps">
+				<li>
+					<strong>建立設定檔</strong>
+					<p>複製範本，再依照這台主機的情況修改（每一項的說明見<a href="#env">下一節</a>）：</p>
+					<pre data-label="Windows"><code>copy .env.example .env
+notepad .env</code></pre>
+					<pre data-label="Linux"><code>cp .env.example .env
+nano .env</code></pre>
+					<p>最重要的是 <code>TRUSTED_ORIGINS</code>：把操作人員會在瀏覽器網址列輸入的<strong>每一種網址</strong>都列上去，包含 <code>http://</code> 和 port。</p>
+					<pre data-label=".env 範例"><code>HOST=0.0.0.0
+PORT=3000
+BODY_SIZE_LIMIT=200M
+LOG_LEVEL=info
+TRUSTED_ORIGINS=http://localhost:3000,http://192.168.1.10:3000,http://scada-pc:3000</code></pre>
+				</li>
+				<li>
+					<strong>建置正式版</strong>
+					<pre><code>npm run build</code></pre>
+					<p>最後出現 <code>✔ done</code>，並產生 <code>build/</code> 資料夾，就是建置成功。</p>
+				</li>
+				<li>
+					<strong>啟動</strong>
+					<pre><code>npm start</code></pre>
+					<pre data-label="輸出"><code>[...] [INFO] [modbus-poller] server starting
+[...] [INFO] [scheduler] scheduler starting
+Listening on http://0.0.0.0:3000</code></pre>
+					<p>用瀏覽器打開 <code>http://&lt;主機 IP&gt;:3000</code> 確認畫面正常。關閉終端機程式就會停止，要開機自動執行請看<a href="#service">設成常駐服務</a>。</p>
+				</li>
+				<li>
+					<strong>驗證</strong>
+					<p>開啟 <code>http://&lt;主機 IP&gt;:3000/api/healthz</code>，應該會看到 <code>"status":"ok"</code>。接著到編輯模式上傳一張平面圖：如果失敗並出現 403，代表你用的網址不在 <code>TRUSTED_ORIGINS</code> 裡（見<a href="#troubleshoot">疑難排解</a>）。</p>
+				</li>
+			</ol>
+			<div class="callout warn">
+				<span class="title">改了 .env 之後要做什麼？</span>
+				<p><code>TRUSTED_ORIGINS</code> 在<strong>建置時</strong>寫進程式，修改後要重新 <code>npm run build</code> 再重啟。其他設定（<code>PORT</code>、<code>HOST</code>、<code>BODY_SIZE_LIMIT</code>、<code>LOG_LEVEL</code>）只要重啟就會生效。</p>
+			</div>
+
+			<h2 id="env"><span class="num">06</span>.env 設定說明</h2>
+			<div class="table-wrap">
+				<table>
+					<thead><tr><th>設定</th><th>何時生效</th><th>說明</th></tr></thead>
+					<tbody>
+						<tr><td><code>HOST</code></td><td>重啟</td><td>監聽的網路介面。<code>0.0.0.0</code> 表示區網內其他電腦都能連；<code>127.0.0.1</code> 表示只有本機能連。</td></tr>
+						<tr><td><code>PORT</code></td><td>重啟</td><td>網頁的 port，預設 <code>3000</code>。</td></tr>
+						<tr><td><code>BODY_SIZE_LIMIT</code></td><td>重啟</td><td>單一請求的大小上限。預設只有 512K，平面圖（最大 10MB）和備份檔（包含所有平面圖）都會超過，<strong>建議設 <code>200M</code></strong>。</td></tr>
+						<tr><td><code>LOG_LEVEL</code></td><td>重啟</td><td><code>debug</code> / <code>info</code> / <code>warn</code> / <code>error</code>。紀錄會同時輸出到終端機和 <code>data/app.log</code>。</td></tr>
+						<tr><td><code>TRUSTED_ORIGINS</code></td><td><strong>重新建置</strong></td><td>允許上傳檔案（平面圖、備份還原）的來源網址，以逗號分隔，每個都要包含 <code>http://</code> 和 port。不在名單裡的網址，上傳時會被拒絕（403）。</td></tr>
+					</tbody>
+				</table>
+			</div>
+
+			<h2 id="service"><span class="num">07</span>設成常駐服務（開機自動啟動）</h2>
+			<p>以下是常見的兩種做法，請依主機的作業系統擇一。重點只有一個：<strong>工作目錄必須是專案資料夾</strong>，因為資料庫和上傳檔案都存在工作目錄底下的 <code>data/</code>、<code>uploads/</code>。</p>
+
+			<h3>Windows：用 NSSM 註冊成服務</h3>
+			<p>下載 <a href="https://nssm.cc/">NSSM</a>，解壓縮後用<strong>系統管理員</strong>身分開啟 PowerShell：</p>
+			<pre data-label="PowerShell（系統管理員）"><code>nssm install ScadaLighting "C:\Program Files\nodejs\node.exe" "--env-file-if-exists=.env build"
+nssm set ScadaLighting AppDirectory "C:\scada\stack-c-sveltekit"
+nssm set ScadaLighting AppStdout "C:\scada\stack-c-sveltekit\data\service.log"
+nssm set ScadaLighting AppStderr "C:\scada\stack-c-sveltekit\data\service.log"
+nssm set ScadaLighting Start SERVICE_AUTO_START
+nssm start ScadaLighting</code></pre>
+			<p>之後可以在「服務」（<code>services.msc</code>）裡啟動、停止、重新啟動 <code>ScadaLighting</code>。</p>
+
+			<h3>Linux：用 systemd</h3>
+			<p>建立 <code>/etc/systemd/system/scada-lighting.service</code>：</p>
+			<pre data-label="/etc/systemd/system/scada-lighting.service"><code>[Unit]
+Description=Lighting SCADA
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=scada
+WorkingDirectory=/opt/scada/stack-c-sveltekit
+ExecStart=/usr/bin/node --env-file-if-exists=.env build
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+			<pre><code>sudo systemctl daemon-reload
+sudo systemctl enable --now scada-lighting
+sudo systemctl status scada-lighting
+journalctl -u scada-lighting -f     <span class="c"># 即時查看紀錄</span></code></pre>
+			<div class="callout">
+				<p><code>User=</code> 請換成實際執行服務的帳號，該帳號要有專案資料夾的讀寫權限；<code>ExecStart</code> 裡 node 的路徑可以用 <code>which node</code> 查詢。</p>
+			</div>
+
+			<h2 id="network"><span class="num">08</span>網路與防火牆</h2>
+			<ul>
+				<li><strong>進來的連線</strong>：開放網頁 port（預設 TCP 3000），讓操作人員的電腦連得到。</li>
+				<li><strong>出去的連線</strong>：主機要能連到每台 Gateway 的 Modbus TCP port（通常是 502）。</li>
+			</ul>
+			<pre data-label="Windows（系統管理員 PowerShell）"><code>New-NetFirewallRule -DisplayName "Lighting SCADA" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow</code></pre>
+			<pre data-label="Linux（ufw）"><code>sudo ufw allow 3000/tcp</code></pre>
+			<p>要確認主機連得到 Gateway，可以在 PowerShell 執行 <code>Test-NetConnection 192.168.1.50 -Port 502</code>（IP 換成你的 Gateway），結果裡的 <code>TcpTestSucceeded</code> 應該是 <code>True</code>。</p>
+
+			<h2 id="data"><span class="num">09</span>資料位置與備份</h2>
+			<div class="table-wrap">
+				<table>
+					<thead><tr><th>路徑</th><th>內容</th></tr></thead>
+					<tbody>
+						<tr><td><code>data/scada.db</code></td><td>所有設定：空間、設備、迴路、座標、場景、排程。旁邊的 <code>-wal</code>、<code>-shm</code> 是 SQLite 的工作檔，也屬於資料庫的一部分。</td></tr>
+						<tr><td><code>data/app.log</code></td><td>系統紀錄，超過 5MB 會自動輪替成 <code>app.log.1</code>。</td></tr>
+						<tr><td><code>uploads/floorplans/</code></td><td>上傳的平面圖。</td></tr>
+					</tbody>
+				</table>
+			</div>
+			<p><strong>建議用系統內建的備份功能</strong>（編輯模式 → 備份與還原 → 下載備份）。它會先把資料庫整理成單一檔案，再和平面圖一起打包成一個 zip，最不容易出錯。操作方式見<a href="/docs/usage.html#backup">配置使用：備份與還原</a>。</p>
+			<p>如果要直接複製檔案（例如搬到新主機），請<strong>先停止服務</strong>，再複製整個 <code>data/</code> 和 <code>uploads/</code> 資料夾。服務執行中直接複製 <code>scada.db</code>，可能會漏掉還在 <code>-wal</code> 檔裡的資料。</p>
+
+			<h2 id="upgrade"><span class="num">10</span>升級更新</h2>
+			<ol class="steps">
+				<li><strong>先備份</strong><p>從系統下載一份備份 zip。</p></li>
+				<li><strong>停止服務</strong><p>Windows：<code>nssm stop ScadaLighting</code>；Linux：<code>sudo systemctl stop scada-lighting</code>。</p></li>
+				<li><strong>更新程式檔</strong><p>用新版覆蓋專案資料夾內的程式檔。<strong>保留</strong> <code>data/</code>、<code>uploads/</code> 和 <code>.env</code>。</p></li>
+				<li><strong>重新安裝並建置</strong><pre><code>npm install
+npm run build</code></pre></li>
+				<li><strong>啟動服務並確認</strong><p>啟動後開啟 <code>/api/healthz</code> 和操作頁面，確認設定都還在、燈號正常更新。</p>
+					<p>啟動時會自動建立缺少的資料表，但<strong>不會</strong>修改既有資料表的欄位。如果新版本的說明提到資料庫結構有變動，請依照該版本的指示處理；出問題時可以用第一步的備份還原。</p></li>
+			</ol>
+
+			<h2 id="troubleshoot"><span class="num">11</span>疑難排解</h2>
+			<div class="table-wrap">
+				<table>
+					<thead><tr><th>狀況</th><th>原因與處理</th></tr></thead>
+					<tbody>
+						<tr>
+							<td>上傳平面圖或還原備份時出現 <code>Cross-site POST form submissions are forbidden</code>（403）</td>
+							<td>瀏覽器網址列上的網址不在 <code>TRUSTED_ORIGINS</code> 裡。把它（含 <code>http://</code> 和 port）加進 <code>.env</code>，然後<strong>重新 <code>npm run build</code></strong> 再重啟。用 IP 和用主機名稱連線算是不同的網址，要分別列出。</td>
+						</tr>
+						<tr>
+							<td>上傳大檔案失敗，或備份還原失敗</td>
+							<td><code>BODY_SIZE_LIMIT</code> 太小，或者根本沒設（預設只有 512K）。改成 <code>200M</code> 後重啟。</td>
+						</tr>
+						<tr>
+							<td>迴路全部顯示紅色斜線加「?」</td>
+							<td>伺服器連不到該設備。先到「系統狀態」頁看連線狀態和連續失敗次數，再檢查 Gateway 的 IP、Port、Slave ID，以及主機到 Gateway 的網路和防火牆（見<a href="#network">網路與防火牆</a>）。</td>
+						</tr>
+						<tr>
+							<td>啟動時出現 <code>EADDRINUSE</code></td>
+							<td>這個 port 已經有別的程式在用（也可能是同一套系統已經在跑）。改 <code>.env</code> 的 <code>PORT</code>，或先停掉占用這個 port 的程式。</td>
+						</tr>
+						<tr>
+							<td><code>npm install</code> 在 <code>better-sqlite3</code> 失敗</td>
+							<td>沒有找到預先編譯好的檔案，而本機又缺少編譯工具。請確認 Node.js 版本符合需求，並安裝 Python 和 C++ 編譯工具後重試（見<a href="#requirements">環境需求</a>）。</td>
+						</tr>
+						<tr>
+							<td>排程觸發的時間不對</td>
+							<td>排程用的是伺服器主機的本機時間，請檢查主機的時區和時鐘。</td>
+						</tr>
+						<tr>
+							<td>還原備份後，資料看起來還是舊的</td>
+							<td>資料庫要在<strong>下一次啟動</strong>時才會換成備份的內容（平面圖則是立即生效）。重新啟動服務即可。</td>
+						</tr>
+						<tr>
+							<td><code>npm start</code> 出現找不到 <code>build</code></td>
+							<td>還沒建置。先執行 <code>npm run build</code>。</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<p>要看更詳細的紀錄，可以把 <code>LOG_LEVEL</code> 改成 <code>debug</code> 後重啟，再查看 <code>data/app.log</code>。</p>
+
+			<h2 id="security"><span class="num">12</span>安全注意事項</h2>
+			<div class="callout danger">
+				<span class="title">只能在受信任的內部網路使用</span>
+				<ul>
+					<li>系統<strong>沒有登入機制</strong>：只要連得到網頁的人，都能開關燈、修改設定、還原備份。</li>
+					<li>連線<strong>沒有加密</strong>（HTTP）。</li>
+					<li>不要把網頁 port 開放到網際網路。需要遠端存取時，請透過 VPN。</li>
+				</ul>
+			</div>
+			<p>外部系統要串接控制燈光，請參考專案內的 <code>EXTERNAL_API.md</code>；完整的 API 說明在 <code>API.md</code>。</p>
+
+			<footer class="page-footer">
+				<a href="/docs/index.html">← 文件首頁</a>
+				<a href="/docs/usage.html">下一篇：配置使用 →</a>
+			</footer>
+		</main>
+	</div>
+	<script src="/docs/docs.js"></script>
+</body>
+</html>

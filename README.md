@@ -66,7 +66,30 @@ effect without restarting the server.
 The frontend never triggers a Modbus read: `GET /api/spaces/:id/status` only
 reads the in-memory cache that the background loop maintains.
 
-## Install & run
+## User documentation
+
+Full end-user docs (Traditional Chinese) are static HTML in `static/docs/`,
+served by the app at `/docs` and linked from every page header ("使用說明"):
+
+- `/docs/install.html` — 安裝架設: requirements, simulator trial, production
+  deploy (`.env`, `npm run build`, `npm start`), running as a Windows/Linux
+  service, firewall, backup, upgrade, troubleshooting.
+- `/docs/usage.html` — 配置使用: first-time setup, every panel, CSV import,
+  operating, icon legend, scenes, schedules, status page, backup/restore.
+
+## Production deploy (summary)
+
+```sh
+cp .env.example .env   # set TRUSTED_ORIGINS, PORT, BODY_SIZE_LIMIT...
+npm run build          # adapter-node -> build/
+npm start              # node --env-file-if-exists=.env build
+```
+
+`TRUSTED_ORIGINS` is baked in at build time (SvelteKit CSRF allowlist for
+multipart uploads over plain HTTP) — rebuild after changing it. Requires
+Node.js 22.17+. See `/docs/install.html` for details.
+
+## Install & run (development)
 
 ```sh
 cd stack-c-sveltekit

@@ -15,12 +15,12 @@
 </script>
 
 <section class="panel">
-	<h2>Spaces</h2>
+	<h2 class="section-title">Spaces <span class="count-badge">{spaces.length}</span></h2>
 	<ul class="space-list">
 		{#each spaces as space (space.id)}
 			<li class:selected={space.id === selectedId}>
 				<button type="button" class="space-btn" onclick={() => onSelect(space.id)}>
-					{space.name}
+					<span class="pin" aria-hidden="true">◆</span>{space.name}
 				</button>
 			</li>
 		{/each}
@@ -31,13 +31,6 @@
 </section>
 
 <style>
-	.panel {
-		margin-bottom: var(--space-4);
-	}
-	.panel h2 {
-		color: var(--color-text);
-		font-size: 1rem;
-	}
 	.space-list {
 		list-style: none;
 		padding: 0;
@@ -51,23 +44,38 @@
 		background: var(--color-accent-muted);
 		border-color: var(--color-accent);
 		color: var(--color-accent-hover);
+		box-shadow: inset 3px 0 0 var(--color-accent);
+	}
+	.space-list li.selected .pin {
+		color: var(--color-accent);
 	}
 	.space-btn {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
 		width: 100%;
 		text-align: left;
 		padding: var(--space-2) var(--space-3);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-sm);
-		background: var(--color-surface-elevated);
+		background: var(--color-surface);
 		color: var(--color-text);
 		cursor: pointer;
-		box-shadow: var(--shadow-card);
+		transition:
+			border-color 120ms,
+			background 120ms;
+	}
+	.pin {
+		font-size: 9px;
+		color: var(--color-text-muted);
 	}
 	.space-btn:hover {
 		border-color: var(--color-border-strong);
+		background: var(--color-surface-elevated);
 	}
 	.empty {
 		color: var(--color-text-muted);
 		font-size: 13px;
+		margin: 0;
 	}
 </style>

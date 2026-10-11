@@ -72,8 +72,8 @@
 <section class="panel">
 	<h2>CSV 批量匯入 Circuit</h2>
 	<p class="hint">
-		header: space_name, device_name, device_ip, device_port, device_slave_id, coil_address, name
-		（選填 circuit_id：若填且比對到現有 Circuit，該行視為更新而非新建）
+		header: <code>space_name, device_name, device_ip, device_port, device_slave_id, coil_address, name</code>
+		（選填 <code>circuit_id</code>：若填且比對到現有 Circuit，該行視為更新而非新建）
 	</p>
 	<input
 		bind:this={fileInputEl}
@@ -220,7 +220,17 @@
 	.hint {
 		font-size: 12px;
 		color: var(--color-text-secondary);
-		margin: 0 0 var(--space-2);
+		margin: 0 0 var(--space-3);
+		line-height: 1.6;
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface);
+		border-left: 2px solid var(--color-accent);
+	}
+	.hint code {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--color-accent-hover);
 	}
 	.filename {
 		font-size: 12px;
@@ -316,8 +326,25 @@
 		display: flex;
 		gap: var(--space-2);
 	}
-	.actions button,
 	.panel > input[type='file'] {
+		font-size: 12px;
+		color: var(--color-text-secondary);
+		max-width: 100%;
+	}
+	.panel > input[type='file']::file-selector-button {
+		margin-right: var(--space-2);
+		background: var(--color-accent);
+		color: var(--color-bg);
+		border: 1px solid var(--color-accent);
+		border-radius: var(--radius-sm);
+		padding: var(--space-2) var(--space-3);
+		font-family: var(--font-ui);
+		cursor: pointer;
+	}
+	.panel > input[type='file']::file-selector-button:hover {
+		background: var(--color-accent-hover);
+	}
+	.actions button {
 		background: var(--color-accent);
 		color: var(--color-bg);
 		border: 1px solid var(--color-accent);

@@ -4,6 +4,7 @@
 	import { api } from '#lib/client/api.ts';
 	import ScenePanel from '#lib/components/ScenePanel.svelte';
 	import SchedulePanel from '#lib/components/SchedulePanel.svelte';
+	import AppHeader from '#lib/components/AppHeader.svelte';
 
 	let spaces = $state<Space[]>([]);
 	let allCircuits = $state<Circuit[]>([]);
@@ -54,23 +55,18 @@
 	<title>燈控 SCADA — 場景與排程</title>
 </svelte:head>
 
-<div class="page">
+<div class="page blueprint-bg">
 	<header class="page-header">
-		<h1>場景與排程</h1>
-		<p class="nav">
-			<a href="/">← 返回操作頁面</a>
-			<a href="/edit">編輯模式</a>
-			<a href="/status">系統狀態</a>
-		</p>
+		<AppHeader mode="AUTOMATION" tone="accent" subtitle="場景群組控制與定時排程" />
 	</header>
 
 	{#if loadError}<p class="error-banner">{loadError}</p>{/if}
 
 	<div class="grid">
-		<div class="card">
+		<div class="ui-card">
 			<ScenePanel {scenes} {spaces} {allCircuits} onChanged={onScenesChanged} />
 		</div>
-		<div class="card">
+		<div class="ui-card">
 			<SchedulePanel {schedules} {scenes} onChanged={onSchedulesChanged} />
 		</div>
 	</div>
@@ -87,40 +83,17 @@
 		min-height: 100vh;
 		padding: var(--space-6);
 		box-sizing: border-box;
+		max-width: 1400px;
+		margin: 0 auto;
 	}
 	.page-header {
 		margin-bottom: var(--space-6);
-	}
-	.page-header h1 {
-		font-size: 1.3rem;
-		margin: 0 0 var(--space-2);
-		color: var(--color-text);
-	}
-	.nav {
-		display: flex;
-		gap: var(--space-4);
-		margin: 0;
-	}
-	.nav a {
-		color: var(--color-accent);
-		text-decoration: none;
-		font-size: 13px;
-	}
-	.nav a:hover {
-		color: var(--color-accent-hover);
 	}
 	.grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
 		gap: var(--space-6);
 		align-items: start;
-	}
-	.card {
-		background: var(--color-surface-elevated);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		box-shadow: var(--shadow-card);
-		padding: var(--space-4);
 	}
 	.error-banner {
 		background: var(--color-danger-bg);

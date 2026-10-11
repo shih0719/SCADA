@@ -8,6 +8,7 @@
 	import ImportCsvPanel from '#lib/components/ImportCsvPanel.svelte';
 	import BackupPanel from '#lib/components/BackupPanel.svelte';
 	import FloorplanCanvas from '#lib/components/FloorplanCanvas.svelte';
+	import AppHeader from '#lib/components/AppHeader.svelte';
 
 	const STATUS_POLL_MS = 1500;
 
@@ -20,6 +21,9 @@
 	let loadError = $state('');
 
 	const selectedSpace = $derived(spaces.find((s) => s.id === selectedSpaceId) ?? null);
+	const placedCount = $derived(circuits.filter((c) => c.pos_x !== null && c.pos_y !== null).length);
+	const onCount = $derived(circuits.filter((c) => states.get(c.id)?.value === true).length);
+	const unknownCount = $derived(circuits.filter((c) => (states.get(c.id)?.value ?? null) === null).length);
 
 	let statusTimer: ReturnType<typeof setInterval> | undefined;
 
@@ -154,13 +158,10 @@
 </svelte:head>
 
 <div class="layout">
-	<aside class="sidebar">
-		<p class="nav">
-			<a href="/">← 返回操作頁面</a>
-			<a href="/automation">場景與排程 →</a>
-		</p>
-		<h1>燈控 SCADA — 編輯模式</h1>
-		<div class="card">
+	<aside class="sidebar thin-scroll">
+		<AppHeader mode="EDIT MODE" tone="amber" subtitle="空間、設備與迴路配置" />
+
+		<div class="ui-card">
 			<SpacePanel
 				{spaces}
 				selectedId={selectedSpaceId}
@@ -168,11 +169,11 @@
 				onChanged={onSpacesChanged}
 			/>
 		</div>
-		<div class="card">
+		<div class="ui-card">
 			<DevicePanel {devices} onChanged={reloadDevices} />
 		</div>
 		{#if selectedSpace}
-			<div class="card">
+			<div class="ui-card">
 				<CircuitPanel
 					spaceId={selectedSpace.id}
 					{circuits}
@@ -183,30 +184,56 @@
 				/>
 			</div>
 		{/if}
-		<div class="card">
+		<div class="ui-card">
 			<ImportCsvPanel onImported={onCsvImported} />
 		</div>
-		<div class="card">
+		<div class="ui-card">
 			<BackupPanel />
 		</div>
 	</aside>
 
-	<main class="main">
+	<main class="main blueprint-bg">
 		{#if loadError}<p class="error-banner">{loadError}</p>{/if}
 		{#if selectedSpace}
-			<h2>{selectedSpace.name}</h2>
-			<FloorplanCanvas
-				space={selectedSpace}
-				{circuits}
-				{states}
-				{placingCircuitId}
-				editable={true}
-				onPositionChange={handlePositionChange}
-				onToggle={handleToggle}
-				onPlaceAt={handlePlaceAt}
-			/>
+			<header class="main-header">
+				<div>
+					<p class="eyebrow">Space #{selectedSpace.id}</p>
+					<h2>{selectedSpace.name}</h2>
+				</div>
+				<div class="stats">
+					<span class="stat"><b>{circuits.length}</b> 迴路</span>
+					<span class="stat"><b>{placedCount}</b> 已放置</span>
+					{#if circuits.length - placedCount > 0}
+						<span class="stat warn"><b>{circuits.length - placedCount}</b> 未放置</span>
+					{/if}
+					<span class="stat on"><span class="dot"></span><b>{onCount}</b> 亮燈</span>
+					{#if unknownCount > 0}
+						<span class="stat err"><b>{unknownCount}</b> 無資料</span>
+					{/if}
+					<span class="stat live" class:stale={!!loadError}>
+						<span class="pulse"></span>
+						{loadError ? '輪詢失敗' : `即時 · 每 ${STATUS_POLL_MS / 1000}s`}
+					</span>
+				</div>
+			</header>
+			<div class="canvas-panel">
+				<FloorplanCanvas
+					space={selectedSpace}
+					{circuits}
+					{states}
+					{placingCircuitId}
+					editable={true}
+					onPositionChange={handlePositionChange}
+					onToggle={handleToggle}
+					onPlaceAt={handlePlaceAt}
+				/>
+			</div>
 		{:else}
-			<p>Create a Space to get started.</p>
+			<div class="empty-state">
+				<div class="empty-icon" aria-hidden="true">▦</div>
+				<h2>尚未建立任何空間</h2>
+				<p>在左側「Spaces」輸入名稱並新增，再上傳平面圖即可開始放置迴路。</p>
+			</div>
 		{/if}
 	</main>
 </div>
@@ -223,51 +250,35 @@
 		height: 100vh;
 	}
 	.sidebar {
-		width: 360px;
+		width: 380px;
 		flex-shrink: 0;
 		overflow-y: auto;
 		padding: var(--space-4);
 		border-right: 1px solid var(--color-border);
 		box-sizing: border-box;
-		background: var(--color-surface);
+		background: linear-gradient(180deg, var(--color-surface), #161b21);
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-4);
-	}
-	.sidebar h1 {
-		font-size: 1.1rem;
-		margin-top: 0;
-		color: var(--color-text);
-	}
-	.nav {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		margin: 0;
-	}
-	.nav a {
-		color: var(--color-accent);
-		text-decoration: none;
-		font-size: 13px;
-	}
-	.nav a:hover {
-		color: var(--color-accent-hover);
-	}
-	.card {
-		background: var(--color-surface-elevated);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-md);
-		box-shadow: var(--shadow-card);
-		padding: var(--space-4);
+		gap: var(--space-3);
 	}
 	.main {
 		flex: 1;
-		padding: var(--space-4);
+		min-width: 0;
+		padding: var(--space-6);
 		overflow-y: auto;
-		background: var(--color-bg);
 		color: var(--color-text);
 	}
-	.main h2 {
+	.main-header {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		margin-bottom: var(--space-4);
+	}
+	.main-header h2 {
+		margin: 2px 0 0;
+		font-size: 1.5rem;
 		color: var(--color-text);
 	}
 	.error-banner {
@@ -276,5 +287,6 @@
 		border: 1px solid var(--color-danger-border);
 		padding: var(--space-2) var(--space-3);
 		border-radius: var(--radius-sm);
+		margin-top: 0;
 	}
 </style>

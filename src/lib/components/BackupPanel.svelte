@@ -51,7 +51,7 @@
 	</p>
 
 	<div class="actions">
-		<button type="button" onclick={downloadBackup} disabled={busy}>下載備份</button>
+		<button type="button" onclick={downloadBackup} disabled={busy}>⇩ 下載備份</button>
 	</div>
 
 	<div class="restore">
@@ -116,12 +116,30 @@
 		color: var(--color-text-secondary);
 	}
 	.restore input[type='file'] {
-		background: var(--color-surface-elevated);
+		font-size: 12px;
+		background: var(--color-surface);
 		color: var(--color-text);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-sm);
 		padding: var(--space-2) var(--space-3);
 		font-family: var(--font-ui);
+	}
+	.restore input[type='file']::file-selector-button {
+		margin-right: var(--space-2);
+		background: transparent;
+		color: var(--color-status-stale);
+		border: 1px solid var(--color-status-stale);
+		border-radius: var(--radius-sm);
+		padding: 4px 10px;
+		font-family: var(--font-ui);
+		cursor: pointer;
+	}
+	.restore input[type='file']::file-selector-button:hover {
+		background: var(--color-status-warning-bg);
+	}
+	.restore {
+		padding-top: var(--space-3);
+		border-top: 1px dashed var(--color-border);
 	}
 	.busy {
 		font-size: 12px;

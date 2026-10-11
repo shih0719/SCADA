@@ -24,6 +24,6 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	return json({
 		ok: true,
-		action_required: '請重新啟動伺服器（Ctrl+C 後重新執行 npm run dev）以套用還原的資料'
+		action_required: '請重新啟動伺服器（或重新啟動系統服務）以套用還原的資料'
 	});
 };

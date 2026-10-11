@@ -63,14 +63,14 @@
 </script>
 
 <section class="panel">
-	<h2>Spaces</h2>
+	<h2 class="head">Spaces <span class="count-badge">{spaces.length}</span></h2>
 	<ul class="space-list">
 		{#each spaces as space (space.id)}
 			<li class:selected={space.id === selectedId}>
 				<button type="button" class="space-btn" onclick={() => onSelect(space.id)}>
 					{space.name}
 				</button>
-				<button type="button" class="danger small" onclick={() => deleteSpace(space.id)}>✕</button>
+				<button type="button" class="danger small" title="刪除空間" aria-label="刪除 {space.name}" onclick={() => deleteSpace(space.id)}>✕</button>
 			</li>
 		{/each}
 	</ul>
@@ -81,9 +81,9 @@
 	</form>
 
 	{#if selectedId}
-		<div class="row">
+		<div class="row upload">
 			<input type="file" accept="image/png,image/jpeg" bind:this={fileInput} />
-			<button type="button" onclick={uploadFloorplan}>Upload Floorplan</button>
+			<button type="button" class="secondary" onclick={uploadFloorplan}>Upload Floorplan</button>
 		</div>
 	{/if}
 
@@ -93,11 +93,13 @@
 <style>
 	.panel { margin-bottom: 0; }
 	.panel h2 { color: var(--color-text); font-size: 1rem; margin-top: 0; }
+	.head { display: flex; align-items: center; gap: var(--space-2); }
 	.space-list { list-style: none; padding: 0; margin: 0 0 var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
 	.space-list li { display: flex; align-items: center; gap: var(--space-2); }
-	.space-list li.selected .space-btn { font-weight: 600; background: var(--color-accent-muted); border-color: var(--color-accent); color: var(--color-accent-hover); }
+	.space-list li.selected .space-btn { font-weight: 600; background: var(--color-accent-muted); border-color: var(--color-accent); color: var(--color-accent-hover); box-shadow: inset 3px 0 0 var(--color-accent); }
 	.space-btn {
 		flex: 1;
+		transition: border-color 120ms, background 120ms;
 		text-align: left;
 		padding: var(--space-2) var(--space-3);
 		border: 1px solid var(--color-border);
@@ -106,9 +108,22 @@
 		color: var(--color-text);
 		cursor: pointer;
 	}
-	.space-btn:hover { border-color: var(--color-border-strong); }
+	.space-btn:hover { border-color: var(--color-border-strong); background: var(--color-surface); }
 	.row { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
-	.row input { flex: 1; }
+	.row input { flex: 1; min-width: 0; }
+	.upload { flex-direction: column; padding-top: var(--space-3); border-top: 1px dashed var(--color-border); margin-top: var(--space-3); }
+	input[type='file'] { font-size: 12px; color: var(--color-text-secondary); padding: var(--space-1); }
+	input[type='file']::file-selector-button {
+		margin-right: var(--space-2);
+		background: var(--color-surface);
+		color: var(--color-text);
+		border: 1px solid var(--color-border-strong);
+		border-radius: var(--radius-sm);
+		padding: 4px 10px;
+		font-family: var(--font-ui);
+		cursor: pointer;
+	}
+	input[type='file']::file-selector-button:hover { border-color: var(--color-accent); }
 	input {
 		background: var(--color-surface-elevated);
 		border: 1px solid var(--color-border);
@@ -131,6 +146,8 @@
 		cursor: pointer;
 	}
 	button:hover { background: var(--color-accent-hover); }
+	.secondary { background: transparent; color: var(--color-accent); }
+	.secondary:hover { background: var(--color-accent-muted); }
 	.danger { background: transparent; color: var(--color-status-error); border-color: var(--color-status-error); }
 	.danger:hover { background: var(--color-status-error-bg); }
 	.small { padding: var(--space-1) var(--space-2); }

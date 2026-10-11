@@ -68,8 +68,10 @@
 </script>
 
 <section class="panel">
-	<h2>Circuits</h2>
-	<button type="button" class="export" onclick={exportCsv}>匯出 CSV</button>
+	<div class="head-row">
+		<h2 class="head">Circuits <span class="count-badge">{circuits.length}</span></h2>
+		<button type="button" class="export" onclick={exportCsv}>⇩ 匯出 CSV</button>
+	</div>
 
 	{#if unpositioned.length > 0}
 		<div class="unpositioned">
@@ -96,7 +98,7 @@
 			<li>
 				<span class="name">{c.name}</span>
 				<span class="meta">coil {c.coil_address}</span>
-				<button type="button" class="danger small" onclick={() => removeCircuit(c.id)}>✕</button>
+				<button type="button" class="danger small" title="刪除迴路" aria-label="刪除 {c.name}" onclick={() => removeCircuit(c.id)}>✕</button>
 			</li>
 		{/each}
 	</ul>
@@ -118,9 +120,16 @@
 <style>
 	.panel { margin-bottom: 0; }
 	.panel h2 { color: var(--color-text); font-size: 1rem; margin-top: 0; }
-	.export { margin-bottom: var(--space-2); font-size: 12px; padding: var(--space-1) var(--space-2); }
+	.head-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+	.head-row h2 { margin: 0; }
+	.head { display: flex; align-items: center; gap: var(--space-2); }
+	.export { font-size: 12px; padding: var(--space-1) var(--space-2); background: transparent; color: var(--color-accent); }
+	.export:hover { background: var(--color-accent-muted); }
 	.list { list-style: none; padding: 0; margin: 0 0 var(--space-2); font-size: 13px; }
-	.list li { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); }
+	.list li { display: flex; align-items: center; gap: var(--space-2); margin-bottom: 2px; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); }
+	.list li:hover { background: var(--color-surface); }
+	.unpositioned .list li { justify-content: space-between; padding-left: 0; padding-right: 0; }
+	.unpositioned .list li:hover { background: none; }
 	.name { font-weight: 600; min-width: 80px; color: var(--color-text); }
 	.meta { color: var(--color-text-secondary); font-family: var(--font-mono); flex: 1; }
 	.unpositioned {
@@ -131,6 +140,8 @@
 		margin-bottom: var(--space-3);
 	}
 	.unpositioned p { margin: 0 0 var(--space-1); font-size: 13px; font-weight: 600; color: var(--color-warning-text); }
+	.grid input, .grid select { min-width: 0; }
+	.grid { padding-top: var(--space-3); border-top: 1px dashed var(--color-border); }
 	.grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-top: var(--space-2); }
 	.grid button { grid-column: span 2; }
 	input, select {
@@ -155,7 +166,7 @@
 		cursor: pointer;
 	}
 	button:hover { background: var(--color-accent-hover); }
-	button.active { background: var(--color-accent-hover); color: var(--color-bg); }
+	button.active { background: var(--color-status-on); border-color: var(--color-status-on); color: var(--color-bg); }
 	.danger { background: transparent; color: var(--color-status-error); border-color: var(--color-status-error); }
 	.danger:hover { background: var(--color-status-error-bg); }
 	.small { padding: var(--space-1) var(--space-2); }

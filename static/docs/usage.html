@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>配置使用 — 燈控 SCADA 使用說明</title>
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%23ffd43b'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="/docs/docs.css" />
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="/docs/index.html"><span class="lamp"></span>燈控 SCADA <small>DOCS</small></a>
+		<nav class="topnav" aria-label="文件導覽">
+			<a href="/docs/install.html">安裝架設</a>
+			<a href="/docs/usage.html" class="current" aria-current="page">配置使用</a>
+			<a href="/">回到系統 →</a>
+		</nav>
+	</header>
+
+	<div class="layout">
+		<nav class="toc" aria-label="本頁目錄">
+			<p>本頁目錄</p>
+			<ol>
+				<li><a href="#pages">四個畫面</a></li>
+				<li><a href="#concepts">基本概念</a></li>
+				<li><a href="#first-setup">第一次配置</a></li>
+				<li><a href="#edit">編輯模式詳解</a></li>
+				<li><a href="#csv">CSV 批量匯入／匯出</a></li>
+				<li><a href="#operate">日常操作</a></li>
+				<li><a href="#legend">燈號圖例</a></li>
+				<li><a href="#scenes">場景</a></li>
+				<li><a href="#schedules">定時排程</a></li>
+				<li><a href="#status">系統狀態</a></li>
+				<li><a href="#backup">備份與還原</a></li>
+				<li><a href="#faq">常見問題</a></li>
+			</ol>
+		</nav>
+
+		<main>
+			<section class="hero">
+				<p class="eyebrow">Part 2 · Configuration &amp; Use</p>
+				<h1>配置使用</h1>
+				<p>
+					給負責設定系統的人和每天操作的人：怎麼建立空間、設備和迴路，怎麼在平面圖上開關燈，以及怎麼用場景和排程自動化。
+					系統還沒架好的話，請先看<a href="/docs/install.html">安裝架設</a>。
+				</p>
+			</section>
+
+			<h2 id="pages"><span class="num">01</span>四個畫面</h2>
+			<p>每個畫面的頁首都有同一組導覽按鈕，目前所在的畫面會亮起來。</p>
+			<div class="cards">
+				<div class="card"><span class="tag">OPERATE · /</span><h3>操作頁面</h3><p>每天使用的畫面：看平面圖上的燈號、點一下開關燈、整區全開全關、套用場景。</p></div>
+				<div class="card"><span class="tag">EDIT MODE · /edit</span><h3>編輯模式</h3><p>建立空間、上傳平面圖、設定 Modbus 設備與迴路，把迴路放到平面圖上。也包含 CSV 匯入和備份。</p></div>
+				<div class="card"><span class="tag">AUTOMATION · /automation</span><h3>場景與排程</h3><p>把多個迴路的開關組合成「場景」，並設定每天、每週固定時間自動套用。</p></div>
+				<div class="card"><span class="tag">STATUS · /status</span><h3>系統狀態</h3><p>每台設備的連線狀態、輪詢成功率和延遲，用來排查設備離線的問題。</p></div>
+			</div>
+			<figure>
+				<img src="/docs/img/operate.png" alt="操作頁面：左側是空間與場景清單，右側是平面圖，三盞燈都亮著" width="1280" height="760" loading="lazy" />
+				<figcaption>操作頁面</figcaption>
+			</figure>
+
+			<h2 id="concepts"><span class="num">02</span>基本概念</h2>
+			<p>開始設定前，先認識系統裡的三種資料：</p>
+			<div class="table-wrap">
+				<table>
+					<thead><tr><th>名稱</th><th>代表什麼</th><th>例子</th></tr></thead>
+					<tbody>
+						<tr><td><strong>空間</strong>（Space）</td><td>一張平面圖，通常是一個樓層或一個區域。</td><td>3F 辦公室、2F 倉庫</td></tr>
+						<tr><td><strong>設備</strong>（Device）</td><td>一台 Modbus TCP Gateway / 控制器，用 IP、Port、Slave ID 來辨識。</td><td>1F 配電箱 Gateway（192.168.1.50:502）</td></tr>
+						<tr><td><strong>迴路</strong>（Circuit）</td><td>設備上的一個線圈（Coil），對應一組燈。每個迴路屬於一個空間、接在一台設備上，並且有一個平面圖上的位置。</td><td>窗邊燈＝1F 配電箱的線圈 1</td></tr>
+					</tbody>
+				</table>
+			</div>
+			<p>一台設備可以控制好幾個空間的迴路；一個空間裡的迴路也可以來自不同設備。</p>
+
+			<h2 id="first-setup"><span class="num">03</span>第一次配置</h2>
+			<p>以下流程全部在<strong>編輯模式</strong>（<code>/edit</code>）完成。</p>
+			<ol class="steps">
+				<li>
+					<strong>建立空間</strong>
+					<p>在左側「Spaces」輸入名稱（例如「3F 辦公室」），按 <strong>Add Space</strong>。新空間會自動被選取。</p>
+				</li>
+				<li>
+					<strong>上傳平面圖</strong>
+					<p>在 Spaces 卡片下方按「選擇檔案」，選一張 PNG 或 JPG（最大 10MB），再按 <strong>Upload Floorplan</strong>。右側就會顯示這張平面圖。</p>
+				</li>
+				<li>
+					<strong>新增設備</strong>
+					<p>展開「Devices」，填寫 Gateway 的資料（各欄位說明見<a href="#devices">設備欄位</a>），按 <strong>Add Device</strong>。系統會馬上開始輪詢這台設備。</p>
+				</li>
+				<li>
+					<strong>新增迴路</strong>
+					<p>在「Circuits」輸入迴路名稱、選擇設備、填線圈位址，按 <strong>Add Circuit</strong>。新的迴路會先出現在黃色的「Not yet placed on the floorplan」清單裡。</p>
+				</li>
+				<li>
+					<strong>把迴路放到平面圖上</strong>
+					<p>在黃色清單裡按該迴路的 <strong>Place on map</strong>（按鈕會變成「Click map…」），再到平面圖上點燈具的位置，燈號就放好了。</p>
+				</li>
+				<li>
+					<strong>測試</strong>
+					<p>點一下燈號，確認現場的燈有跟著開關；拖曳燈號可以微調位置，放開滑鼠時會自動儲存。</p>
+				</li>
+			</ol>
+			<div class="callout ok">
+				<span class="title">迴路很多？</span>
+				<p>可以用 <a href="#csv">CSV 批量匯入</a>一次建立所有的空間、設備和迴路，之後只需要逐一放到平面圖上。</p>
+			</div>
+			<figure>
+				<img src="/docs/img/edit.png" alt="編輯模式：左側依序是 Spaces、Devices、Circuits 卡片，右側是平面圖" width="1280" height="760" loading="lazy" />
+				<figcaption>編輯模式</figcaption>
+			</figure>
+
+			<h2 id="edit"><span class="num">04</span>編輯模式詳解</h2>
+
+			<h3>空間（Spaces）</h3>
+			<ul>
+				<li>點空間名稱就能切換，右側會換成該空間的平面圖。</li>
+				<li>重新上傳平面圖會換掉原本的圖片；迴路座標是以圖片的原始像素記錄的，<strong>換成尺寸不同的圖片時，請重新檢查燈號位置</strong>。</li>
+				<li>按名稱右邊的 <strong>✕</strong> 刪除。如果空間裡還有迴路，會先跳出確認視窗；按「確定」會<strong>連同裡面所有迴路一起刪除</strong>，按「取消」則什麼都不會動。</li>
+			</ul>
+
+			<h3 id="devices">設備（Devices）</h3>
+			<p>點「▸ Devices」展開或收合這張卡片。</p>
+			<div class="table-wrap">
+				<table>
+					<thead><tr><th>欄位</th><th>說明</th><th>表單預設值</th></tr></thead>
+					<tbody>
+						<tr><td>Device name</td><td>顯示用的名稱，例如「1F 配電箱 Gateway」。</td><td>—</td></tr>
+						<tr><td>IP address</td><td>Gateway 的 IPv4 位址或主機名稱。</td><td><code>127.0.0.1</code></td></tr>
+						<tr><td>Port</td><td>Modbus TCP 的 port，實體設備通常是 <code>502</code>。</td><td><code>15020</code>（模擬器用）</td></tr>
+						<tr><td>Slave ID</td><td>Modbus 的 Unit / Slave ID。</td><td><code>1</code></td></tr>
+						<tr><td>Poll ms</td><td>每隔多少毫秒讀一次狀態。數字越小，畫面越即時，但對設備和網路的負擔也越大。</td><td><code>1500</code></td></tr>
+						<tr><td>Timeout ms</td><td>每次讀寫最多等多久，超過就判定這次失敗。</td><td><code>1000</code></td></tr>
+					</tbody>
+				</table>
+			</div>
+			<ul>
+				<li>清單左側的燈號：<span style="color: var(--ok)">●</span> 綠色代表已啟用，灰色代表停用（整列也會變淡）。</li>
+				<li>取消勾選 <strong>enabled</strong> 會停止輪詢這台設備，它的迴路會顯示為離線；適合設備維修時使用。</li>
+				<li>新增、修改、停用設備都會<strong>立即生效</strong>，不需要重啟伺服器。</li>
+				<li>刪除的規則和空間相同：如果還有迴路接在這台設備上，會先詢問是否一起刪除。</li>
+			</ul>
+
+			<h3>迴路（Circuits）</h3>
+			<p>這張卡片顯示的是<strong>目前選取的空間</strong>的迴路。</p>
+			<ul>
+				<li><strong>線圈位址</strong>（Coil address）是從 0 開始算的 Modbus 線圈位址，請對照 Gateway 的點位表。同一台設備重複使用同一個位址不會被擋下，但請確認這是你要的設定。</li>
+				<li>右上角的 <strong>⇩ 匯出 CSV</strong> 會下載這個空間的所有迴路（格式見<a href="#csv">CSV</a>）。</li>
+				<li>在編輯模式的平面圖上：<strong>拖曳</strong>燈號可以移動位置，<strong>點一下</strong>則會開關燈（和操作頁面一樣）。</li>
+			</ul>
+
+			<h2 id="csv"><span class="num">05</span>CSV 批量匯入／匯出</h2>
+			<p>適合一次建立大量迴路，或者先匯出、在 Excel 裡修改後再匯回去。</p>
+			<h3>欄位</h3>
+			<pre data-label="第一行（header）"><code>space_name,device_name,device_ip,device_port,device_slave_id,coil_address,name</code></pre>
+			<div class="table-wrap">
+				<table>
+					<thead><tr><th>欄位</th><th>說明</th></tr></thead>
+					<tbody>
+						<tr><td><code>space_name</code></td><td>空間名稱。找不到同名的空間時會自動建立。</td></tr>
+						<tr><td><code>device_name</code></td><td>設備名稱。找不到同名的設備時會自動建立，這時下面三欄必填。</td></tr>
+						<tr><td><code>device_ip</code> / <code>device_port</code> / <code>device_slave_id</code></td><td>只在<strong>新建</strong>設備時使用；已經存在的設備會忽略這三欄，不會覆寫原本的設定。</td></tr>
+						<tr><td><code>coil_address</code></td><td>線圈位址（0 以上的整數）。</td></tr>
+						<tr><td><code>name</code></td><td>迴路名稱。</td></tr>
+						<tr><td><code>circuit_id</code>（選填）</td><td>填入既有迴路的編號時，這一行會變成<strong>更新</strong>該迴路（名稱、位址、空間、設備），並保留它在平面圖上的位置。匯出的 CSV 會自動帶這一欄。</td></tr>
+					</tbody>
+				</table>
+			</div>
+			<pre data-label="範例"><code>space_name,device_name,device_ip,device_port,device_slave_id,coil_address,name
+3F辦公室,1F配電箱Gateway,192.168.1.50,502,1,0,主燈
+3F辦公室,1F配電箱Gateway,,,,1,窗邊燈
+2F倉庫,2F配電箱Gateway,192.168.1.51,502,1,0,走道燈</code></pre>
+			<h3>匯入步驟</h3>
+			<ol class="steps">
+				<li><strong>選擇檔案</strong><p>在「CSV 批量匯入 Circuit」卡片選擇 <code>.csv</code> 檔。系統會立刻做一次<strong>預覽</strong>，這時還不會寫入任何資料。</p></li>
+				<li><strong>檢查預覽</strong><p>預覽會列出會新建哪些空間和設備，以及每一行的結果：<em>新建</em>、<em>更新</em>、<em>警告</em>或<em>錯誤</em>。有錯誤的行不會被匯入，其他行不受影響。</p></li>
+				<li><strong>確認匯入</strong><p>按 <strong>確認匯入（N 筆）</strong> 才會真正寫入；按 <strong>取消</strong> 則放棄。匯入完成後，新的迴路會出現在「未放置」清單裡，等你放到平面圖上。</p></li>
+			</ol>
+			<div class="callout">
+				<p>用 Excel 編輯時，請存成 <strong>CSV UTF-8</strong> 格式，中文名稱才不會變成亂碼。</p>
+			</div>
+
+			<h2 id="operate"><span class="num">06</span>日常操作</h2>
+			<p>操作頁面（<code>/</code>）是給值班人員用的，這裡<strong>不能</strong>修改設定，不用擔心誤刪資料。</p>
+			<ul>
+				<li><strong>切換空間</strong>：點左側「Spaces」裡的名稱。</li>
+				<li><strong>開關單一迴路</strong>：點平面圖上的燈號，燈號會先立刻改變；如果寫入失敗，會恢復原狀、閃紅色，並在上方顯示錯誤訊息。狀態未知（離線）的迴路點了不會有反應。</li>
+				<li><strong>整區全開／全關</strong>：按右上角的 <strong>全部開</strong> 或 <strong>全部關</strong>，確認後會對目前空間的所有迴路下指令。完成後會顯示成功幾筆；有失敗時會列出失敗的迴路名稱。</li>
+				<li><strong>套用場景</strong>：按左側「場景」清單裡的 <strong>套用</strong>。</li>
+				<li><strong>上方的統計</strong>：迴路總數、亮燈數、熄燈數、離線數，以及即時更新的指示燈；資料讀取失敗時，指示燈會變成紅色的「輪詢失敗」。</li>
+			</ul>
+			<div class="callout warn">
+				<p>剛開啟頁面時，如果看到「<strong>伺服器剛重啟，狀態同步中…</strong>」，請等幾秒，等燈號讀取完成再操作。</p>
+			</div>
+
+			<h2 id="legend"><span class="num">07</span>燈號圖例</h2>
+			<div class="legend">
+				<div class="legend-item"><span class="bulb on"></span><div>亮燈<small>讀取正常，迴路是開的</small></div></div>
+				<div class="legend-item"><span class="bulb off"></span><div>熄燈<small>讀取正常，迴路是關的</small></div></div>
+				<div class="legend-item"><span class="bulb stale"><span class="badge">!</span></span><div>資料過舊<small>有一段時間沒有讀到新資料</small></div></div>
+				<div class="legend-item"><span class="bulb error"><span class="badge">?</span></span><div>離線／未知<small>連不到設備，狀態不可信</small></div></div>
+			</div>
+			<ul>
+				<li><strong>資料過舊</strong>：超過「輪詢間隔 × 3」或 5 秒（取較長者）沒有成功讀取。燈號顯示的是最後一次讀到的狀態，僅供參考。</li>
+				<li><strong>離線／未知</strong>：系統不會沿用最後的狀態冒充現況，所以這時無法判斷燈是開還是關，也無法點擊切換。設備恢復連線後，一個輪詢週期內會自動恢復正常。</li>
+				<li>把滑鼠移到燈號上，可以看到迴路名稱、線圈位址和目前狀態。</li>
+			</ul>
+
+			<h2 id="scenes"><span class="num">08</span>場景</h2>
+			<p>場景是一組「哪些迴路要開、哪些要關」的組合，例如「上班模式」或「下班關燈」。一個場景可以同時包含不同空間的迴路。場景在<strong>場景與排程</strong>頁面（<code>/automation</code>）建立，在操作頁面套用。</p>
+			<figure>
+				<img src="/docs/img/automation.png" alt="場景與排程頁面：左側是場景清單與新增表單，右側是排程清單與新增表單" width="1280" height="760" loading="lazy" />
+				<figcaption>場景與排程</figcaption>
+			</figure>
+			<h3>建立場景</h3>
+			<ol class="steps">
+				<li><strong>輸入場景名稱</strong></li>
+				<li><strong>逐一設定迴路</strong><p>清單會列出所有空間的所有迴路，每一列都有三個選項：<strong>不設定</strong>（套用時不碰這個迴路）、<strong>開</strong>、<strong>關</strong>。</p></li>
+				<li><strong>按「建立場景」</strong></li>
+			</ol>
+			<ul>
+				<li>按場景旁的 <strong>編輯</strong>，會把內容載入下方表單，改完按 <strong>儲存變更</strong>；按 <strong>取消編輯</strong> 則放棄修改。</li>
+				<li>套用場景時，就算其中幾個迴路失敗（例如某台設備離線），其他迴路仍然會照常執行，結果訊息會列出失敗的迴路。</li>
+				<li>刪除場景時，<strong>使用這個場景的排程也會一起被刪除</strong>。</li>
+			</ul>
+
+			<h2 id="schedules"><span class="num">09</span>定時排程</h2>
+			<p>排程會在指定的時間、指定的星期幾，自動套用一個場景。排程只能套用場景；如果想要「每天 18:30 把 3F 全部關掉」，請先建立一個把 3F 所有迴路設成「關」的場景。</p>
+			<h3>建立排程</h3>
+			<ol class="steps">
+				<li><strong>填寫名稱</strong><p>例如「平日下班關燈」。</p></li>
+				<li><strong>選擇要套用的場景</strong></li>
+				<li><strong>設定時間</strong><p>24 小時制，以<strong>伺服器主機的時間</strong>為準，不是你這台電腦的時間。</p></li>
+				<li><strong>點選星期幾</strong><p>點一下選取（變成藍色），再點一下取消。至少要選一天。</p></li>
+				<li><strong>確認「啟用」有勾選，按「建立排程」</strong></li>
+			</ol>
+			<h3>排程清單怎麼看</h3>
+			<ul>
+				<li>左邊的大字是觸發時間，下方的燈號是綠色代表啟用中，灰色代表停用（整張卡片也會變淡）。</li>
+				<li>七個小圓圈代表日～六，亮藍色的是有排程的日子。</li>
+				<li>「最後觸發」顯示上一次自動執行的時間。</li>
+				<li>想暫停排程但不刪除，取消勾選 <strong>啟用</strong> 即可。</li>
+			</ul>
+			<div class="callout warn">
+				<span class="title">要知道的限制</span>
+				<ul>
+					<li>系統每 30 秒檢查一次排程，實際觸發的時間可能比設定的晚幾十秒。</li>
+					<li>如果在預定時間伺服器剛好沒有在執行（例如正在重啟），<strong>這一次就會跳過，不會事後補做</strong>。</li>
+				</ul>
+			</div>
+
+			<h2 id="status"><span class="num">10</span>系統狀態</h2>
+			<p>「系統狀態」頁（<code>/status</code>）每 4 秒自動更新，用來檢查每台設備的通訊品質。</p>
+			<figure>
+				<img src="/docs/img/status.png" alt="系統狀態頁：整體狀態 ok，一台設備已連線，成功率 100%" width="1280" height="760" loading="lazy" />
+				<figcaption>系統狀態</figcaption>
+			</figure>
+			<div class="table-wrap">
+				<table>
+					<thead><tr><th>欄位</th><th>說明</th></tr></thead>
+					<tbody>
+						<tr><td>整體狀態</td><td><code>ok</code> 代表一切正常；只要有任一台啟用中的設備連續失敗 3 次以上，就會變成 <code>degraded</code>。</td></tr>
+						<tr><td>連線狀態</td><td>這台設備目前是否連得上。</td></tr>
+						<tr><td>成功率／平均延遲</td><td>以最近 20 次輪詢計算。成功率下降或延遲變高，通常代表網路不穩或設備負載過重。</td></tr>
+						<tr><td>連續失敗次數</td><td>達到 3 次會以警示色顯示。</td></tr>
+						<tr><td>最後成功時間</td><td>最後一次成功讀取的時間。</td></tr>
+					</tbody>
+				</table>
+			</div>
+
+			<h2 id="backup"><span class="num">11</span>備份與還原</h2>
+			<p>在編輯模式最下方的「備份與還原」卡片操作。</p>
+			<h3>備份</h3>
+			<p>按 <strong>⇩ 下載備份</strong>，會下載一個 <code>scada-backup-&lt;時間&gt;.zip</code>，裡面包含所有設定（空間、設備、迴路、座標、場景、排程）和所有平面圖。建議在大幅修改設定之前，以及定期都備份一次，並把檔案存到別台電腦。</p>
+			<h3>還原</h3>
+			<ol class="steps">
+				<li><strong>選擇備份檔</strong><p>在「還原備份（.zip）」選擇之前下載的 zip，確認視窗按「確定」。</p></li>
+				<li><strong>看到「還原成功」</strong><p>這時平面圖已經換成備份裡的版本，但<strong>設定資料還沒有</strong>。</p></li>
+				<li><strong>重新啟動伺服器</strong><p>重啟後，資料庫才會換成備份的內容（舊的資料庫會保留為 <code>data/scada.db.bak</code>）。重啟的方式見<a href="/docs/install.html#service">安裝架設：常駐服務</a>。</p></li>
+			</ol>
+			<div class="callout danger">
+				<span class="title">還原會覆蓋目前的所有資料</span>
+				<p>包含所有設定和平面圖。如果不確定，請先下載一份目前的備份再還原。格式不正確的檔案會被拒絕，目前的資料不會受影響。</p>
+			</div>
+
+			<h2 id="faq"><span class="num">12</span>常見問題</h2>
+			<h3>點燈號沒有反應？</h3>
+			<p>如果燈號是紅色斜線加「?」，代表系統讀不到這個迴路的狀態，所以不能切換。請到「系統狀態」頁確認設備是否連線。</p>
+			<h3>現場的燈已經切換了，畫面卻慢了一兩秒？</h3>
+			<p>這是正常的。畫面每 1.5 秒更新一次，伺服器也是依設備的輪詢間隔去讀取，所以會有短暫延遲。</p>
+			<h3>燈號位置跑掉了？</h3>
+			<p>通常是換了一張尺寸不同的平面圖。到編輯模式把燈號拖回正確位置即可，放開滑鼠就會自動儲存。</p>
+			<h3>上傳平面圖時出現 403？</h3>
+			<p>這是部署設定的問題，請系統管理員參考<a href="/docs/install.html#troubleshoot">安裝架設：疑難排解</a>。</p>
+			<h3>可以讓其他系統控制燈嗎？</h3>
+			<p>可以。外部系統的串接方式寫在專案內的 <code>EXTERNAL_API.md</code>。</p>
+
+			<footer class="page-footer">
+				<a href="/docs/install.html">← 上一篇：安裝架設</a>
+				<a href="/">回到系統 →</a>
+			</footer>
+		</main>
+	</div>
+	<script src="/docs/docs.js"></script>
+</body>
+</html>

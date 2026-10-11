@@ -107,24 +107,25 @@
 </script>
 
 <section class="panel">
-	<h2>場景 / 群組控制</h2>
+	<h2 class="section-title">場景 / 群組控制 <span class="count-badge">{scenes.length}</span></h2>
 
 	<ul class="list">
 		{#each scenes as scene (scene.id)}
-			<li>
+			<li class:editing={editingSceneId === scene.id}>
+				<span class="scene-icon" aria-hidden="true">✦</span>
 				<span class="name">{scene.name}</span>
 				<span class="meta">{scene.action_count} 個動作</span>
-				<button type="button" class="small" onclick={() => startEdit(scene.id)}>編輯</button>
-				<button type="button" class="danger small" onclick={() => removeScene(scene.id, scene.name)}>✕</button>
+				<button type="button" class="small ghost" onclick={() => startEdit(scene.id)}>編輯</button>
+				<button type="button" class="danger small" title="刪除場景" aria-label="刪除 {scene.name}" onclick={() => removeScene(scene.id, scene.name)}>✕</button>
 			</li>
 		{/each}
 		{#if scenes.length === 0}
-			<li class="empty">尚無場景</li>
+			<li class="empty-row">尚無場景</li>
 		{/if}
 	</ul>
 
 	<form class="scene-form" onsubmit={(e) => { e.preventDefault(); save(); }}>
-		<p class="form-title">{editingSceneId === null ? '新增場景' : `編輯場景 #${editingSceneId}`}</p>
+		<p class="form-title" class:is-editing={editingSceneId !== null}>{editingSceneId === null ? '＋ 新增場景' : `✎ 編輯場景 #${editingSceneId}`}</p>
 		<input placeholder="場景名稱" bind:value={name} />
 
 		<div class="circuit-list">
@@ -172,30 +173,48 @@
 	.panel { margin-bottom: 0; }
 	.panel h2 { color: var(--color-text); font-size: 1rem; margin-top: 0; }
 	.list { list-style: none; padding: 0; margin: 0 0 var(--space-3); font-size: 13px; }
-	.list li { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); }
+	.list li {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface);
+		transition: border-color 120ms;
+	}
+	.list li:hover { border-color: var(--color-border-strong); }
+	.list li.editing { border-color: var(--color-accent); box-shadow: inset 3px 0 0 var(--color-accent); }
+	.list li.empty-row { justify-content: center; color: var(--color-text-muted); border-style: dashed; background: none; }
+	.scene-icon { color: var(--color-status-on); font-size: 12px; }
 	.name { font-weight: 600; min-width: 80px; color: var(--color-text); }
-	.meta { color: var(--color-text-secondary); font-family: var(--font-mono); flex: 1; }
+	.meta { color: var(--color-text-secondary); font-family: var(--font-mono); font-size: 11px; flex: 1; }
 	.empty { color: var(--color-text-muted); font-size: 13px; }
 
 	.scene-form {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-2);
-		border-top: 1px solid var(--color-border);
-		padding-top: var(--space-3);
+		gap: var(--space-3);
+		padding: var(--space-3);
+		border: 1px dashed var(--color-border-strong);
+		border-radius: var(--radius-md);
+		background: rgba(15, 20, 25, 0.35);
 	}
 	.form-title { margin: 0; font-size: 13px; font-weight: 600; color: var(--color-text); }
+	.form-title.is-editing { color: var(--color-accent-hover); }
 
 	.circuit-list {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-1);
-		max-height: 260px;
+		max-height: 300px;
+		scrollbar-width: thin;
 		overflow-y: auto;
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-sm);
-		padding: var(--space-2);
-		background: var(--color-surface-elevated);
+		padding: var(--space-1);
+		background: var(--color-surface);
 	}
 	.circuit-row {
 		display: flex;
@@ -203,13 +222,26 @@
 		justify-content: space-between;
 		gap: var(--space-2);
 		font-size: 12px;
-	}
-	.circuit-label { color: var(--color-text); flex: 1; }
-	.tri-toggle { display: flex; gap: var(--space-1); flex-shrink: 0; }
-	.tri-toggle button {
 		padding: var(--space-1) var(--space-2);
-		font-size: 11px;
+		border-radius: var(--radius-sm);
 	}
+	.circuit-row:hover { background: var(--color-surface-elevated); }
+	.circuit-label { color: var(--color-text); flex: 1; }
+	.tri-toggle {
+		display: flex;
+		flex-shrink: 0;
+		border: 1px solid var(--color-border-strong);
+		border-radius: var(--radius-sm);
+		overflow: hidden;
+	}
+	.tri-toggle button {
+		padding: 3px var(--space-2);
+		font-size: 11px;
+		border: none;
+		border-radius: 0;
+		min-width: 34px;
+	}
+	.tri-toggle button + button { border-left: 1px solid var(--color-border-strong); }
 
 	.form-actions { display: flex; gap: var(--space-2); }
 
@@ -237,13 +269,18 @@
 	button:hover { background: var(--color-accent-hover); }
 	button:disabled { opacity: 0.6; cursor: not-allowed; }
 	button.active { background: var(--color-accent-hover); color: var(--color-bg); }
-	.tri-toggle button:not(.active) { background: var(--color-surface-elevated); color: var(--color-text-secondary); }
-	.tri-toggle button.on.active { background: var(--color-status-ok); border-color: var(--color-status-ok); }
-	.tri-toggle button.off.active { background: var(--color-status-error); border-color: var(--color-status-error); }
+	.tri-toggle button:not(.active) { background: transparent; color: var(--color-text-secondary); }
+	.tri-toggle button:not(.active):hover { background: var(--color-surface-elevated); color: var(--color-text); }
+	.tri-toggle button.active { background: var(--color-border-strong); color: var(--color-text); }
+	/* on = lit-bulb amber, matching the floorplan icons; off = unlit grey */
+	.tri-toggle button.on.active { background: var(--color-status-on); color: var(--color-bg); font-weight: 600; }
+	.tri-toggle button.off.active { background: var(--color-status-off); color: var(--color-text); font-weight: 600; }
 	.secondary { background: transparent; color: var(--color-text-secondary); }
 	.secondary:hover { background: var(--color-surface-elevated); }
 	.danger { background: transparent; color: var(--color-status-error); border-color: var(--color-status-error); }
 	.danger:hover { background: var(--color-status-error-bg); }
 	.small { padding: var(--space-1) var(--space-2); font-size: 11px; }
+	.ghost { background: transparent; color: var(--color-accent); }
+	.ghost:hover { background: var(--color-accent-muted); }
 	.error { color: var(--color-status-error); font-size: 13px; }
 </style>

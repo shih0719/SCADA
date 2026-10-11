@@ -57,12 +57,13 @@
 
 <section class="panel">
 	<button type="button" class="toggle-open" onclick={() => (open = !open)}>
-		{open ? '▾' : '▸'} Devices ({devices.length})
+		<span class="chev" class:open>▸</span> Devices <span class="count-badge">{devices.length}</span>
 	</button>
 	{#if open}
 		<ul class="list">
 			{#each devices as device (device.id)}
-				<li>
+				<li class:disabled={!device.is_enabled}>
+					<span class="led" class:on={!!device.is_enabled}></span>
 					<span class="name">{device.name}</span>
 					<span class="meta">{device.ip_address}:{device.port} #{device.slave_id}</span>
 					<label class="enabled">
@@ -72,7 +73,7 @@
 							onchange={() => toggleEnabled(device)}
 						/> enabled
 					</label>
-					<button type="button" class="danger small" onclick={() => removeDevice(device.id)}>✕</button>
+					<button type="button" class="danger small" title="刪除設備" aria-label="刪除 {device.name}" onclick={() => removeDevice(device.id)}>✕</button>
 				</li>
 			{/each}
 		</ul>
@@ -93,6 +94,10 @@
 <style>
 	.panel { margin-bottom: 0; }
 	.toggle-open {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		width: 100%;
 		background: none;
 		border: none;
 		color: var(--color-text);
@@ -102,10 +107,27 @@
 		padding: 0;
 	}
 	.list { list-style: none; padding: 0; margin: var(--space-3) 0 var(--space-2); font-size: 13px; }
-	.list li { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); }
+	.toggle-open:hover { background: none; color: var(--color-accent-hover); }
+	.chev { display: inline-block; transition: transform 150ms; color: var(--color-text-muted); }
+	.chev.open { transform: rotate(90deg); }
+	.list li {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-1);
+		padding: var(--space-2);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+	}
+	.list li.disabled { opacity: 0.6; }
+	.led { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--color-status-off); }
+	.led.on { background: var(--color-status-ok); box-shadow: 0 0 6px var(--color-status-ok); }
 	.name { font-weight: 600; min-width: 80px; color: var(--color-text); }
-	.meta { color: var(--color-text-secondary); font-family: var(--font-mono); flex: 1; }
+	.meta { color: var(--color-text-secondary); font-family: var(--font-mono); font-size: 11px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.enabled { font-size: 12px; display: flex; align-items: center; gap: 2px; color: var(--color-text-secondary); }
+	.grid input { min-width: 0; }
+	.grid { padding-top: var(--space-3); border-top: 1px dashed var(--color-border); }
 	.grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-top: var(--space-2); }
 	.grid button { grid-column: span 2; }
 	input {

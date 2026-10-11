@@ -4,6 +4,7 @@
 	import { api } from '#lib/client/api.ts';
 	import SpaceSelector from '#lib/components/SpaceSelector.svelte';
 	import FloorplanCanvas from '#lib/components/FloorplanCanvas.svelte';
+	import AppHeader from '#lib/components/AppHeader.svelte';
 
 	const STATUS_POLL_MS = 1500;
 	const RESTART_NOTICE_UPTIME_THRESHOLD_MS = 10000;
@@ -29,6 +30,8 @@
 	const offlineCount = $derived(
 		Array.from(states.values()).filter((s) => s.status === 'error').length
 	);
+	const onCount = $derived(Array.from(states.values()).filter((s) => s.value === true).length);
+	const offCount = $derived(Array.from(states.values()).filter((s) => s.value === false).length);
 
 	let statusTimer: ReturnType<typeof setInterval> | undefined;
 	let restartNoticeTimer: ReturnType<typeof setTimeout> | undefined;
@@ -221,26 +224,19 @@
 </svelte:head>
 
 <div class="layout">
-	<aside class="sidebar">
-		<h1>燈控 SCADA</h1>
-		<p class="nav">
-			<a href="/edit">編輯模式 →</a>
-			<a href="/automation">場景與排程 →</a>
-			<a href="/status">系統狀態 →</a>
-		</p>
-		<p class="summary">
-			<span class="summary-item">{states.size} 個迴路</span>
-			{#if offlineCount > 0}
-				<span class="summary-item summary-offline">{offlineCount} 個離線</span>
-			{/if}
-		</p>
-		<SpaceSelector spaces={spaces} selectedId={selectedSpaceId} onSelect={selectSpace} />
+	<aside class="sidebar thin-scroll">
+		<AppHeader mode="OPERATE" tone="ok" subtitle="即時監控與迴路控制" />
 
-		<section class="panel scene-panel">
-			<h2>場景</h2>
+		<div class="ui-card">
+			<SpaceSelector spaces={spaces} selectedId={selectedSpaceId} onSelect={selectSpace} />
+		</div>
+
+		<section class="ui-card scene-panel">
+			<h2 class="section-title">場景 <span class="count-badge">{scenes.length}</span></h2>
 			<ul class="scene-list">
 				{#each scenes as scene (scene.id)}
 					<li>
+						<span class="scene-icon" aria-hidden="true">✦</span>
 						<span class="scene-name">{scene.name}</span>
 						<button
 							type="button"
@@ -254,40 +250,71 @@
 				{/each}
 			</ul>
 			{#if scenes.length === 0}
-				<p class="empty">尚無場景，請至編輯頁建立。</p>
+				<p class="empty">尚無場景，請至<a href="/automation">場景與排程</a>建立。</p>
 			{/if}
 			{#if sceneMessage}<p class="result-message">{sceneMessage}</p>{/if}
 		</section>
 	</aside>
 
-	<main class="main">
+	<main class="main blueprint-bg">
 		{#if restartNotice}<p class="restart-banner">{restartNotice}</p>{/if}
 		{#if loadError}<p class="error-banner">{loadError}</p>{/if}
 		{#if selectedSpace}
-			<div class="space-header">
-				<h2>{selectedSpace.name}</h2>
+			<header class="main-header">
+				<div class="title-block">
+					<p class="eyebrow">Space #{selectedSpace.id}</p>
+					<h2>{selectedSpace.name}</h2>
+					<div class="stats">
+						<span class="stat"><b>{states.size}</b> 迴路</span>
+						<span class="stat on"><span class="dot"></span><b>{onCount}</b> 亮燈</span>
+						<span class="stat"><span class="dot"></span><b>{offCount}</b> 熄燈</span>
+						{#if offlineCount > 0}
+							<span class="stat err"><b>{offlineCount}</b> 離線</span>
+						{/if}
+						<span class="stat live" class:stale={!!loadError}>
+							<span class="pulse"></span>
+							{loadError ? '輪詢失敗' : `即時 · 每 ${STATUS_POLL_MS / 1000}s`}
+						</span>
+					</div>
+				</div>
 				<div class="bulk-actions">
-					<button type="button" disabled={bulkSetBusy} onclick={() => handleBulkSet(true)}>
-						全部開
+					<button
+						type="button"
+						class="bulk-on"
+						disabled={bulkSetBusy}
+						onclick={() => handleBulkSet(true)}
+					>
+						<span class="bulb" aria-hidden="true"></span>全部開
 					</button>
-					<button type="button" disabled={bulkSetBusy} onclick={() => handleBulkSet(false)}>
-						全部關
+					<button
+						type="button"
+						class="bulk-off"
+						disabled={bulkSetBusy}
+						onclick={() => handleBulkSet(false)}
+					>
+						<span class="bulb" aria-hidden="true"></span>全部關
 					</button>
 				</div>
-			</div>
+			</header>
 			{#if bulkSetMessage}<p class="result-message">{bulkSetMessage}</p>{/if}
-			<FloorplanCanvas
-				space={selectedSpace}
-				{circuits}
-				{states}
-				editable={false}
-				{flashErrorIds}
-				onPositionChange={noopPositionChange}
-				onToggle={handleToggle}
-				onPlaceAt={noopPlaceAt}
-			/>
+			<div class="canvas-panel">
+				<FloorplanCanvas
+					space={selectedSpace}
+					{circuits}
+					{states}
+					editable={false}
+					{flashErrorIds}
+					onPositionChange={noopPositionChange}
+					onToggle={handleToggle}
+					onPlaceAt={noopPlaceAt}
+				/>
+			</div>
 		{:else}
-			<p>No Space selected. Use the Layout Editor to create one.</p>
+			<div class="empty-state">
+				<div class="empty-icon" aria-hidden="true">▦</div>
+				<h2>尚未選擇空間</h2>
+				<p>目前沒有可顯示的空間，請先到<a href="/edit">編輯模式</a>建立空間並上傳平面圖。</p>
+			</div>
 		{/if}
 	</main>
 </div>
@@ -304,113 +331,118 @@
 		height: 100vh;
 	}
 	.sidebar {
-		width: 320px;
+		width: 340px;
 		flex-shrink: 0;
 		overflow-y: auto;
 		padding: var(--space-4);
 		border-right: 1px solid var(--color-border);
 		box-sizing: border-box;
-		background: var(--color-surface);
-	}
-	.sidebar h1 {
-		font-size: 1.1rem;
-		margin-top: 0;
-		color: var(--color-text);
-	}
-	.nav {
+		background: linear-gradient(180deg, var(--color-surface), #161b21);
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-1);
-		margin: 0 0 var(--space-3);
-	}
-	.nav a {
-		color: var(--color-accent);
-		text-decoration: none;
-		font-size: 13px;
-	}
-	.nav a:hover {
-		color: var(--color-accent-hover);
-	}
-	.summary {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-		margin: 0 0 var(--space-4);
-	}
-	.summary-item {
-		font-size: 12px;
-		font-family: var(--font-mono);
-		padding: var(--space-1) var(--space-2);
-		border-radius: var(--radius-sm);
-		background: var(--color-surface-elevated);
-		color: var(--color-text-secondary);
-	}
-	.summary-offline {
-		background: var(--color-status-error-bg);
-		color: var(--color-status-error);
+		gap: var(--space-3);
 	}
 	.main {
 		flex: 1;
-		padding: var(--space-4);
+		min-width: 0;
+		padding: var(--space-6);
 		overflow-y: auto;
-		background: var(--color-bg);
 		color: var(--color-text);
 	}
-	.main h2 {
+	.main-header {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: var(--space-4);
+		margin-bottom: var(--space-4);
+	}
+	.main-header h2 {
+		margin: 2px 0 var(--space-3);
+		font-size: 1.5rem;
 		color: var(--color-text);
+	}
+	.error-banner,
+	.restart-banner {
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius-sm);
+		margin-top: 0;
 	}
 	.error-banner {
 		background: var(--color-danger-bg);
 		color: var(--color-danger-text);
 		border: 1px solid var(--color-danger-border);
-		padding: var(--space-2) var(--space-3);
-		border-radius: var(--radius-sm);
 	}
 	.restart-banner {
 		background: var(--color-warning-bg);
 		color: var(--color-warning-text);
 		border: 1px solid var(--color-warning-border);
-		padding: var(--space-2) var(--space-3);
-		border-radius: var(--radius-sm);
 	}
-	.space-header {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-	}
+
+	/* ---- Bulk on/off: the two most consequential buttons on the page ---- */
 	.bulk-actions {
 		display: flex;
 		gap: var(--space-2);
 	}
 	.bulk-actions button {
-		background: var(--color-accent);
-		color: var(--color-bg);
-		border: 1px solid var(--color-accent);
-		border-radius: var(--radius-sm);
-		padding: var(--space-1) var(--space-3);
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		border-radius: var(--radius-md);
+		padding: var(--space-2) var(--space-4);
 		font-family: var(--font-ui);
-		font-size: 13px;
+		font-size: 14px;
+		font-weight: 600;
 		cursor: pointer;
-	}
-	.bulk-actions button:hover {
-		background: var(--color-accent-hover);
+		transition:
+			background 120ms,
+			box-shadow 120ms;
 	}
 	.bulk-actions button:disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
 	}
+	.bulb {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+	}
+	.bulk-on {
+		background: rgba(255, 212, 59, 0.12);
+		color: var(--color-status-on);
+		border: 1px solid rgba(255, 212, 59, 0.5);
+	}
+	.bulk-on .bulb {
+		background: var(--color-status-on);
+		box-shadow: 0 0 8px var(--color-status-on-glow);
+	}
+	.bulk-on:hover:not(:disabled) {
+		background: rgba(255, 212, 59, 0.2);
+		box-shadow: 0 0 16px rgba(255, 212, 59, 0.2);
+	}
+	.bulk-off {
+		background: var(--color-surface);
+		color: var(--color-text);
+		border: 1px solid var(--color-border-strong);
+	}
+	.bulk-off .bulb {
+		background: var(--color-status-off);
+	}
+	.bulk-off:hover:not(:disabled) {
+		background: var(--color-surface-elevated);
+	}
 	.result-message {
+		display: inline-block;
 		font-size: 13px;
 		color: var(--color-text-secondary);
-		margin: var(--space-1) 0 var(--space-3);
+		margin: 0 0 var(--space-3);
+		padding: var(--space-1) var(--space-3);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface);
+		border-left: 2px solid var(--color-accent);
 	}
-	.scene-panel {
-		margin-top: var(--space-4);
-	}
-	.scene-panel h2 {
-		color: var(--color-text);
-		font-size: 1rem;
-	}
+
+	/* ---- Scenes ---- */
 	.scene-list {
 		list-style: none;
 		padding: 0;
@@ -422,40 +454,53 @@
 	.scene-list li {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--space-2);
 		padding: var(--space-2) var(--space-3);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-sm);
-		background: var(--color-surface-elevated);
-		box-shadow: var(--shadow-card);
+		background: var(--color-surface);
+		transition: border-color 120ms;
+	}
+	.scene-list li:hover {
+		border-color: var(--color-border-strong);
+	}
+	.scene-icon {
+		color: var(--color-status-on);
+		font-size: 12px;
 	}
 	.scene-name {
+		flex: 1;
 		color: var(--color-text);
 		font-size: 13px;
 	}
 	.apply-btn {
-		background: var(--color-accent);
-		color: var(--color-bg);
+		background: transparent;
+		color: var(--color-accent);
 		border: 1px solid var(--color-accent);
 		border-radius: var(--radius-sm);
-		padding: var(--space-1) var(--space-2);
+		padding: var(--space-1) var(--space-3);
 		font-family: var(--font-ui);
 		font-size: 12px;
 		cursor: pointer;
 	}
-	.apply-btn:hover {
-		background: var(--color-accent-hover);
+	.apply-btn:hover:not(:disabled) {
+		background: var(--color-accent);
+		color: var(--color-bg);
 	}
 	.apply-btn:disabled {
 		opacity: 0.6;
 		cursor: not-allowed;
 	}
+	.scene-panel .result-message {
+		margin: var(--space-3) 0 0;
+	}
 	.empty {
 		color: var(--color-text-muted);
 		font-size: 13px;
+		margin: 0;
 	}
-	.panel {
-		margin-bottom: var(--space-4);
+	.empty a,
+	.empty-state a {
+		color: var(--color-accent);
 	}
 </style>

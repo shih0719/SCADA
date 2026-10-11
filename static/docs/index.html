@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>燈控 SCADA 使用說明</title>
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6' fill='%23ffd43b'/%3E%3C/svg%3E" />
+	<link rel="stylesheet" href="/docs/docs.css" />
+	<style>
+		.index-main {
+			max-width: 880px;
+			margin: 0 auto;
+			padding: 40px 24px 96px;
+		}
+		.cards .card h3 {
+			font-size: 1.25rem;
+		}
+		.cards .card ul {
+			margin: 12px 0 0;
+			padding-left: 18px;
+			font-size: 14px;
+			color: var(--text-2);
+		}
+		@media (max-width: 900px) {
+			.index-main {
+				padding: 24px 16px 72px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<header class="topbar">
+		<a class="brand" href="/docs/index.html"><span class="lamp"></span>燈控 SCADA <small>DOCS</small></a>
+		<nav class="topnav" aria-label="文件導覽">
+			<a href="/docs/install.html">安裝架設</a>
+			<a href="/docs/usage.html">配置使用</a>
+			<a href="/">回到系統 →</a>
+		</nav>
+	</header>
+
+	<main class="index-main">
+		<section class="hero">
+			<p class="eyebrow">Documentation</p>
+			<h1>燈控 SCADA 使用說明</h1>
+			<p>透過 Modbus TCP 控制照明迴路的網頁系統：在平面圖上即時看燈號、點一下開關燈，並用場景和排程自動化。</p>
+		</section>
+
+		<div class="cards">
+			<a class="card" href="/docs/install.html">
+				<span class="tag">PART 1 · 給系統管理員</span>
+				<h3>安裝架設 →</h3>
+				<p>準備主機、安裝程式、正式部署與常駐服務。</p>
+				<ul>
+					<li>環境需求與安裝</li>
+					<li>用模擬器試跑</li>
+					<li>.env 設定、防火牆</li>
+					<li>備份、升級、疑難排解</li>
+				</ul>
+			</a>
+			<a class="card" href="/docs/usage.html">
+				<span class="tag">PART 2 · 給設定與操作人員</span>
+				<h3>配置使用 →</h3>
+				<p>建立空間、設備與迴路，日常操作與自動化。</p>
+				<ul>
+					<li>第一次配置流程</li>
+					<li>CSV 批量匯入</li>
+					<li>燈號圖例與日常操作</li>
+					<li>場景、排程、備份還原</li>
+				</ul>
+			</a>
+		</div>
+
+		<div class="callout">
+			<span class="title">快速開始</span>
+			<p>已經架好、只想開始設定？直接看<a href="/docs/usage.html#first-setup">第一次配置</a>的六個步驟。</p>
+		</div>
+	</main>
+</body>
+</html>

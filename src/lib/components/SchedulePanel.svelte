@@ -123,19 +123,27 @@
 </script>
 
 <section class="panel">
-	<h2>定時排程</h2>
+	<h2 class="section-title">定時排程 <span class="count-badge">{schedules.length}</span></h2>
 	<p class="hint">時間為伺服器本機時間。排程只能套用已建立的場景——若要排程某個空間全開/全關，請先建立一個對應的場景。</p>
 
 	<ul class="list">
 		{#each schedules as schedule (schedule.id)}
-			<li>
+			<li class:disabled={!schedule.is_enabled} class:editing={editingScheduleId === schedule.id}>
+				<div class="time-tile">
+					<span class="time">{schedule.time_of_day}</span>
+					<span class="led" class:on={Boolean(schedule.is_enabled)}></span>
+				</div>
+				<div class="row-body">
 				<div class="row-main">
 					<span class="name">{schedule.name}</span>
 					<span class="meta">→ {schedule.scene_name ?? `場景 #${schedule.scene_id}`}</span>
 				</div>
 				<div class="row-sub">
-					<span class="time">{schedule.time_of_day}</span>
-					<span class="days">{daysSummary(schedule.days_of_week)}</span>
+					<span class="day-dots" title={daysSummary(schedule.days_of_week)}>
+						{#each DAY_LABELS as label, day (day)}
+							<span class="day-dot" class:active={schedule.days_of_week.includes(day)}>{label}</span>
+						{/each}
+					</span>
 					<span class="last-triggered">
 						最後觸發：{schedule.last_triggered_at ?? '從未'}
 					</span>
@@ -149,17 +157,20 @@
 						/>
 						啟用
 					</label>
-					<button type="button" class="small" onclick={() => startEdit(schedule)}>編輯</button>
+					<button type="button" class="small ghost" onclick={() => startEdit(schedule)}>編輯</button>
 					<button
 						type="button"
 						class="danger small"
+						title="刪除排程"
+						aria-label="刪除 {schedule.name}"
 						onclick={() => removeSchedule(schedule.id, schedule.name)}>✕</button
 					>
+				</div>
 				</div>
 			</li>
 		{/each}
 		{#if schedules.length === 0}
-			<li class="empty">尚無排程</li>
+			<li class="empty-row">尚無排程</li>
 		{/if}
 	</ul>
 
@@ -167,7 +178,7 @@
 		<p class="empty">請先到上面建立場景，才能設定排程。</p>
 	{:else}
 		<form class="schedule-form" onsubmit={(e) => { e.preventDefault(); save(); }}>
-			<p class="form-title">{editingScheduleId === null ? '新增排程' : `編輯排程 #${editingScheduleId}`}</p>
+			<p class="form-title" class:is-editing={editingScheduleId !== null}>{editingScheduleId === null ? '＋ 新增排程' : `✎ 編輯排程 #${editingScheduleId}`}</p>
 			<input placeholder="排程名稱" bind:value={name} />
 
 			<label class="field">
@@ -219,37 +230,102 @@
 <style>
 	.panel { margin-bottom: 0; }
 	.panel h2 { color: var(--color-text); font-size: 1rem; margin-top: 0; }
-	.hint { color: var(--color-text-secondary); font-size: 12px; margin: 0 0 var(--space-3); }
+	.hint {
+		color: var(--color-text-secondary);
+		font-size: 12px;
+		line-height: 1.6;
+		margin: 0 0 var(--space-3);
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface);
+		border-left: 2px solid var(--color-accent);
+	}
 	.list { list-style: none; padding: 0; margin: 0 0 var(--space-3); font-size: 13px; }
 	.list li {
 		display: flex;
-		flex-direction: column;
-		gap: var(--space-1);
-		border-bottom: 1px solid var(--color-border);
-		padding-bottom: var(--space-2);
+		gap: var(--space-3);
+		align-items: stretch;
+		padding: var(--space-2);
 		margin-bottom: var(--space-2);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface);
+		transition: border-color 120ms, opacity 120ms;
 	}
+	.list li:hover { border-color: var(--color-border-strong); }
+	.list li.disabled { opacity: 0.55; }
+	.list li.editing { border-color: var(--color-accent); box-shadow: inset 3px 0 0 var(--color-accent); }
+	.list li.empty-row { justify-content: center; color: var(--color-text-muted); border-style: dashed; background: none; }
+	.time-tile {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		min-width: 72px;
+		padding: var(--space-2);
+		border-radius: var(--radius-sm);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+	}
+	.led { width: 8px; height: 8px; border-radius: 50%; background: var(--color-status-off); }
+	.led.on { background: var(--color-status-ok); box-shadow: 0 0 6px var(--color-status-ok); }
+	.row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
 	.row-main { display: flex; align-items: baseline; gap: var(--space-2); }
 	.name { font-weight: 600; color: var(--color-text); }
 	.meta { color: var(--color-text-secondary); }
-	.row-sub { display: flex; gap: var(--space-2); font-size: 12px; color: var(--color-text-secondary); }
-	.time { font-family: var(--font-mono); color: var(--color-text); }
-	.days { font-family: var(--font-mono); }
-	.last-triggered { flex: 1; }
+	.row-sub { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: 11px; color: var(--color-text-muted); }
+	.time { font-family: var(--font-mono); font-size: 18px; font-weight: 600; color: var(--color-text); letter-spacing: 0.02em; }
+	.day-dots { display: inline-flex; gap: 3px; }
+	.day-dot {
+		width: 18px;
+		height: 18px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		font-size: 10px;
+		color: var(--color-text-muted);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+	}
+	.day-dot.active { color: var(--color-bg); background: var(--color-accent); border-color: var(--color-accent); font-weight: 700; }
+	.last-triggered { flex: 1; min-width: 0; }
 	.row-actions { display: flex; align-items: center; gap: var(--space-2); }
 	.empty { color: var(--color-text-muted); font-size: 13px; }
 
 	.schedule-form {
 		display: flex;
 		flex-direction: column;
-		gap: var(--space-2);
-		border-top: 1px solid var(--color-border);
-		padding-top: var(--space-3);
+		gap: var(--space-3);
+		padding: var(--space-3);
+		border: 1px dashed var(--color-border-strong);
+		border-radius: var(--radius-md);
+		background: rgba(15, 20, 25, 0.35);
 	}
 	.form-title { margin: 0; font-size: 13px; font-weight: 600; color: var(--color-text); }
+	.form-title.is-editing { color: var(--color-accent-hover); }
 	.field { display: flex; flex-direction: column; gap: var(--space-1); font-size: 12px; color: var(--color-text-secondary); }
-	.day-checkboxes { display: flex; gap: var(--space-2); flex-wrap: wrap; }
-	.day-checkbox { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--color-text); }
+	.day-checkboxes { display: flex; gap: var(--space-1); flex-wrap: wrap; }
+	.day-checkbox {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 34px;
+		height: 30px;
+		font-size: 12px;
+		color: var(--color-text-secondary);
+		border: 1px solid var(--color-border-strong);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		user-select: none;
+		transition: background 120ms, color 120ms;
+	}
+	.day-checkbox:hover { color: var(--color-text); border-color: var(--color-accent); }
+	.day-checkbox input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+	.day-checkbox:has(input:checked) { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-bg); font-weight: 700; }
+	.day-checkbox:has(input:focus-visible) { outline: 2px solid var(--color-accent-hover); outline-offset: 2px; }
 	.enabled-toggle { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--color-text); }
 
 	.form-actions { display: flex; gap: var(--space-2); }
@@ -286,5 +362,7 @@
 	.danger { background: transparent; color: var(--color-status-error); border-color: var(--color-status-error); }
 	.danger:hover { background: var(--color-status-error-bg); }
 	.small { padding: var(--space-1) var(--space-2); font-size: 11px; }
+	.ghost { background: transparent; color: var(--color-accent); }
+	.ghost:hover { background: var(--color-accent-muted); }
 	.error { color: var(--color-status-error); font-size: 13px; }
 </style>
